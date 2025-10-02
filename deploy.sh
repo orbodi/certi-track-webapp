@@ -144,7 +144,7 @@ if [ ! -w "$SCRIPT_DIR" ]; then
 fi
 
 # Étape 1 : Vérifier Docker
-info "Étape 1/9 : Vérification de Docker..."
+info "Étape 1/10 : Vérification de Docker..."
 
 if ! command -v docker &> /dev/null; then
     error "Docker n'est pas installé !"
@@ -184,7 +184,7 @@ success "Docker Compose détecté"
 echo ""
 
 # Étape 2 : Vérifier les fichiers requis
-info "Étape 2/9 : Vérification des fichiers requis..."
+info "Étape 2/10 : Vérification des fichiers requis..."
 
 if [ ! -f "docker-compose.yml" ]; then
     error "Fichier docker-compose.yml introuvable"
@@ -205,14 +205,14 @@ success "Tous les fichiers requis sont présents"
 echo ""
 
 # Étape 3 : Arrêter les conteneurs existants
-info "Étape 3/9 : Arrêt des conteneurs existants..."
+info "Étape 3/10 : Arrêt des conteneurs existants..."
 $DOCKER_COMPOSE down --remove-orphans >> "$LOG_FILE" 2>&1
 success "Conteneurs arrêtés"
 echo ""
 
 # Étape 4 : Build des images (optionnel)
 if [ "$BUILD" = true ]; then
-    info "Étape 4/9 : Construction des images Docker..."
+    info "Étape 4/10 : Construction des images Docker..."
     
     if [ "$USE_CACHE" = false ]; then
         warning "Construction sans cache (peut prendre 5-10 minutes)..."
@@ -224,18 +224,18 @@ if [ "$BUILD" = true ]; then
     
     success "Images construites avec succès"
 else
-    info "Étape 4/9 : Construction des images ignorée (--no-build ou --quick)"
+    info "Étape 4/10 : Construction des images ignorée (--no-build ou --quick)"
 fi
 echo ""
 
 # Étape 5 : Démarrer les services
-info "Étape 5/9 : Démarrage des conteneurs..."
+info "Étape 5/10 : Démarrage des conteneurs..."
 $DOCKER_COMPOSE up -d >> "$LOG_FILE" 2>&1
 success "Conteneurs démarrés"
 echo ""
 
 # Étape 6 : Attendre que PostgreSQL soit prêt
-info "Étape 6/9 : Attente de la base de données PostgreSQL..."
+info "Étape 6/10 : Attente de la base de données PostgreSQL..."
 MAX_RETRIES=60
 RETRY_COUNT=0
 
@@ -257,23 +257,35 @@ success "Base de données prête"
 echo ""
 
 # Étape 7 : Exécuter les migrations
-info "Étape 7/9 : Application des migrations de la base de données..."
+info "Étape 7/10 : Application des migrations de la base de données..."
 $DOCKER_COMPOSE exec -T web python manage.py migrate --noinput 2>&1 | tee -a "$LOG_FILE"
 success "Migrations appliquées"
 echo ""
 
+# Étape 7.5 : Installer Bootstrap en local si nécessaire
+info "Étape 7.5/10 : Vérification de Bootstrap local..."
+if [ ! -f "static/vendor/bootstrap/bootstrap.min.css" ]; then
+    warning "Bootstrap non trouvé, installation en local..."
+    chmod +x scripts/install-bootstrap-local.sh
+    ./scripts/install-bootstrap-local.sh >> "$LOG_FILE" 2>&1
+    success "Bootstrap installé localement"
+else
+    success "Bootstrap déjà installé localement"
+fi
+echo ""
+
 # Étape 8 : Collecter les fichiers statiques (sauf en mode quick)
 if [ "$QUICK" = false ]; then
-    info "Étape 8/9 : Collecte des fichiers statiques..."
+    info "Étape 8/10 : Collecte des fichiers statiques..."
     $DOCKER_COMPOSE exec -T web python manage.py collectstatic --noinput --clear >> "$LOG_FILE" 2>&1
     success "Fichiers statiques collectés"
 else
-    info "Étape 8/9 : Collecte des fichiers statiques ignorée (--quick)"
+    info "Étape 8/10 : Collecte des fichiers statiques ignorée (--quick)"
 fi
 echo ""
 
 # Étape 9 : Initialiser les tâches Celery
-info "Étape 9/9 : Initialisation des tâches planifiées Celery..."
+info "Étape 9/10 : Initialisation des tâches planifiées Celery..."
 $DOCKER_COMPOSE exec -T web python manage.py init_celery_schedules 2>&1 | tee -a "$LOG_FILE"
 success "Tâches Celery initialisées"
 echo ""
