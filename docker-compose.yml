@@ -1,0 +1,105 @@
+services:
+  # Base de données PostgreSQL
+  db:
+    image: postgres:15
+    container_name: certitrack_db
+    environment:
+      POSTGRES_DB: certitrack
+      POSTGRES_USER: certitrack_user
+      POSTGRES_PASSWORD: Certitrack1234
+      PGPORT: 5444
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5444:5444"
+    restart: unless-stopped
+
+  # Redis (pour Celery - optionnel)
+  redis:
+    image: redis:7-alpine
+    container_name: certitrack_redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  # Application Django
+  web:
+    build: .
+    container_name: certitrack_web
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    ports:
+      - "8000:8000"
+    environment:
+      - SERVICE_NAME=web
+      - DEBUG=False
+      - SECRET_KEY=django-insecure-rc%mwjw2tn+i+u_s3bsr%3a3ojavdw750k*4pikxzoq@82p5a+
+      - POSTGRES_DB=certitrack
+      - POSTGRES_USER=certitrack_user
+      - POSTGRES_PASSWORD=Certitrack1234
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5444
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - ALLOWED_HOSTS=localhost,127.0.0.1
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+
+  # Celery Worker (optionnel)
+  celery:
+    build: .
+    container_name: certitrack_celery
+    command: celery -A config worker -l info --pool=solo
+    volumes:
+      - .:/app
+    environment:
+      - SERVICE_NAME=celery
+      - DEBUG=False
+      - SECRET_KEY=django-insecure-rc%mwjw2tn+i+u_s3bsr%3a3ojavdw750k*4pikxzoq@82p5a+
+      - POSTGRES_DB=certitrack
+      - POSTGRES_USER=certitrack_user
+      - POSTGRES_PASSWORD=Certitrack1234
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5444
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+      - web
+    restart: unless-stopped
+
+  # Celery Beat (optionnel - planificateur)
+  celery-beat:
+    build: .
+    container_name: certitrack_celery_beat
+    command: celery -A config beat -l info
+    volumes:
+      - .:/app
+    environment:
+      - SERVICE_NAME=celery-beat
+      - DEBUG=False
+      - SECRET_KEY=django-insecure-rc%mwjw2tn+i+u_s3bsr%3a3ojavdw750k*4pikxzoq@82p5a+
+      - POSTGRES_DB=certitrack
+      - POSTGRES_USER=certitrack_user
+      - POSTGRES_PASSWORD=Certitrack1234
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5444
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+      - web
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
+

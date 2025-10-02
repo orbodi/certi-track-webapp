@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CertiTrack - Dashboard Mural</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <!-- Auto-refresh -->
+    <meta http-equiv="refresh" content="{{ refresh_interval }}">
+    
+    <style>
+        :root {
+            --atos-blue: #0066B3;
+            --atos-blue-dark: #004A8F;
+            --color-success: #52B788;
+            --color-warning: #F4A261;
+            --color-danger: #E76F51;
+        }
+        
+        body {
+            background: #f0f2f5;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 10px;
+            overflow: hidden;
+            height: 100vh;
+            margin: 0;
+        }
+        
+        .dashboard-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding-bottom: 45px;
+        }
+        
+        .dashboard-header {
+            background: linear-gradient(135deg, var(--atos-blue) 0%, var(--atos-blue-dark) 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 3px 10px rgba(0, 102, 179, 0.3);
+            flex-shrink: 0;
+        }
+        
+        .dashboard-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+        }
+        
+        /* Grille 3 colonnes */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .status-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .status-card .card-header {
+            padding: 10px 15px;
+            border: none;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: white;
+        }
+        
+        .status-card.success .card-header {
+            background: linear-gradient(135deg, var(--color-success) 0%, #40916C 100%);
+        }
+        
+        .status-card.warning .card-header {
+            background: linear-gradient(135deg, var(--color-warning) 0%, #E65100 100%);
+        }
+        
+        .status-card.danger .card-header {
+            background: linear-gradient(135deg, var(--color-danger) 0%, #C62828 100%);
+        }
+        
+        .table-wrapper {
+            overflow-y: auto;
+            flex: 1;
+        }
+        
+        .table {
+            margin: 0;
+            font-size: 0.85rem;
+        }
+        
+        .table thead th {
+            position: sticky;
+            top: 0;
+            background: #f8f9fa;
+            font-weight: 600;
+            font-size: 0.8rem;
+            padding: 6px 10px;
+            border-bottom: 2px solid #dee2e6;
+            z-index: 10;
+        }
+        
+        .table tbody td {
+            padding: 5px 10px;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: middle;
+        }
+        
+        .table tbody tr:hover {
+            background: rgba(0, 102, 179, 0.05);
+        }
+        
+        .cert-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #2C3E50;
+            line-height: 1.1;
+        }
+        
+        .cert-info {
+            color: #7A7B7D;
+            font-size: 0.7rem;
+            line-height: 1.1;
+            margin-top: 1px;
+        }
+        
+        .days-badge {
+            font-size: 0.85rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 5px;
+            display: inline-block;
+            min-width: 65px;
+            text-align: center;
+        }
+        
+        .badge-green {
+            background: linear-gradient(135deg, var(--color-success) 0%, #40916C 100%);
+            color: white;
+        }
+        
+        .badge-orange {
+            background: linear-gradient(135deg, var(--color-warning) 0%, #E65100 100%);
+            color: white;
+        }
+        
+        .badge-red {
+            background: linear-gradient(135deg, var(--color-danger) 0%, #C62828 100%);
+            color: white;
+            animation: pulse 2s infinite;
+        }
+        
+        .badge-expired {
+            background: linear-gradient(135deg, #999 0%, #666 100%);
+            color: white;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.75; }
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+            font-size: 1rem;
+        }
+        
+        .footer-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            padding: 8px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+        }
+        
+        .refresh-badge {
+            background: rgba(0, 102, 179, 0.3);
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+        }
+        
+        .count-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header avec statistiques -->
+        <div class="dashboard-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1><i class="bi bi-shield-lock"></i> CertiTrack Dashboard</h1>
+                </div>
+                <div class="d-flex gap-4 align-items-center">
+                    <!-- Total -->
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.8rem; font-weight: 700; line-height: 1;">{{ stats.total }}</div>
+                        <div style="font-size: 0.7rem; opacity: 0.8;">Total</div>
+                    </div>
+                    
+                    <div style="border-left: 2px solid rgba(255, 255, 255, 0.3); height: 35px;"></div>
+                    
+                    <!-- Expire Bientôt -->
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.8rem; font-weight: 700; line-height: 1; color: #FFD700;">{{ stats.expiring_soon }}</div>
+                        <div style="font-size: 0.7rem; opacity: 0.8;">⚠️ Expire Bientôt</div>
+                    </div>
+                    
+                    <div style="border-left: 2px solid rgba(255, 255, 255, 0.3); height: 35px;"></div>
+                    
+                    <!-- Expirés -->
+                    <div style="text-align: center;">
+                        <div style="font-size: 1.8rem; font-weight: 700; line-height: 1; color: #FF6B6B;">{{ stats.expired }}</div>
+                        <div style="font-size: 0.7rem; opacity: 0.8;">❌ Expirés</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grille 3 cards -->
+        <div class="cards-grid">
+            <!-- Card 1 : Actifs (>30j) -->
+            <div class="status-card success">
+                <div class="card-header">
+                    <i class="bi bi-check-circle-fill"></i> Actifs
+                    <span class="count-badge">{{ stats.active }}</span>
+                </div>
+                <div class="table-wrapper">
+                    {% if critical_certs or warning_certs %}
+                    {% with active_certs=warning_certs|slice:":100" %}
+                    {% if active_certs %}
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Certificat</th>
+                                <th class="text-center">Jours</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cert in active_certs %}
+                            {% if cert.days_remaining > 30 %}
+                            <tr>
+                                <td>
+                                    <div class="cert-name">{{ cert.common_name }}</div>
+                                    {% if cert.environment %}
+                                    <div class="cert-info">
+                                        <i class="bi bi-hdd"></i> {{ cert.get_environment_display }}
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <span class="days-badge badge-green">{{ cert.days_remaining }}j</span>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="empty-state">
+                        <i class="bi bi-inbox"></i><br>Aucun
+                    </div>
+                    {% endif %}
+                    {% endwith %}
+                    {% else %}
+                    <div class="empty-state">
+                        <i class="bi bi-inbox"></i><br>Aucun certificat actif
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Card 2 : Expire Bientôt (≤30j) -->
+            <div class="status-card warning">
+                <div class="card-header">
+                    <i class="bi bi-exclamation-triangle-fill"></i> Expire Bientôt
+                    <span class="count-badge">{{ stats.expiring_soon }}</span>
+                </div>
+                <div class="table-wrapper">
+                    {% if critical_certs or warning_certs %}
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Certificat</th>
+                                <th class="text-center">Jours</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cert in critical_certs %}
+                            <tr>
+                                <td>
+                                    <div class="cert-name">{{ cert.common_name }}</div>
+                                    {% if cert.environment %}
+                                    <div class="cert-info">
+                                        <i class="bi bi-hdd"></i> {{ cert.get_environment_display }}
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if cert.days_remaining <= 7 %}
+                                    <span class="days-badge badge-red">{{ cert.days_remaining }}j</span>
+                                    {% else %}
+                                    <span class="days-badge badge-orange">{{ cert.days_remaining }}j</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            
+                            {% for cert in warning_certs %}
+                            {% if cert.days_remaining <= 30 %}
+                            <tr>
+                                <td>
+                                    <div class="cert-name">{{ cert.common_name }}</div>
+                                    {% if cert.environment %}
+                                    <div class="cert-info">
+                                        <i class="bi bi-hdd"></i> {{ cert.get_environment_display }}
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <span class="days-badge badge-orange">{{ cert.days_remaining }}j</span>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="empty-state">
+                        <i class="bi bi-check-circle"></i><br>Aucun certificat en cours d'expiration
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Card 3 : Expirés -->
+            <div class="status-card danger">
+                <div class="card-header">
+                    <i class="bi bi-x-circle-fill"></i> Expirés
+                    <span class="count-badge">{{ stats.expired }}</span>
+                </div>
+                <div class="table-wrapper">
+                    {% if expired_certs %}
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Certificat</th>
+                                <th class="text-center">Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cert in expired_certs %}
+                            <tr>
+                                <td>
+                                    <div class="cert-name">{{ cert.common_name }}</div>
+                                    {% if cert.environment %}
+                                    <div class="cert-info">
+                                        <i class="bi bi-hdd"></i> {{ cert.get_environment_display }}
+                                        | Expiré le {{ cert.valid_until|date:"d/m/Y" }}
+                                    </div>
+                                    {% else %}
+                                    <div class="cert-info">
+                                        Expiré le {{ cert.valid_until|date:"d/m/Y" }}
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <span class="days-badge badge-expired">EXP</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="empty-state">
+                        <i class="bi bi-check-circle"></i><br>Aucun certificat expiré
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer bar -->
+    <div class="footer-bar">
+        <div>
+            <i class="bi bi-shield-lock"></i> <strong>CertiTrack</strong>
+            <span style="opacity: 0.7; margin-left: 15px;">Atos Meda TOGO</span>
+        </div>
+        <div>
+            <span class="refresh-badge">
+                <i class="bi bi-arrow-clockwise"></i> {{ refresh_interval }}s
+            </span>
+            <span style="margin-left: 25px;">
+                <i class="bi bi-clock"></i> {{ current_time|date:"d/m/Y H:i" }} UTC
+            </span>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Auto-scroll pour tableaux longs -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const scrollContainers = document.querySelectorAll('.table-wrapper');
+            
+            scrollContainers.forEach(container => {
+                const table = container.querySelector('table');
+                if (!table) return;
+                
+                const containerHeight = container.clientHeight;
+                const tableHeight = table.clientHeight;
+                
+                // Si le tableau est plus grand que le conteneur, activer auto-scroll
+                if (tableHeight > containerHeight) {
+                    let scrollPosition = 0;
+                    const scrollSpeed = 30; // pixels par seconde
+                    const pauseAtEnd = 3000; // pause de 3s en haut et en bas
+                    let direction = 1; // 1 = bas, -1 = haut
+                    let isPaused = false;
+                    
+                    function autoScroll() {
+                        if (isPaused) return;
+                        
+                        scrollPosition += direction;
+                        
+                        // Vérifier si on atteint le bas
+                        if (scrollPosition >= tableHeight - containerHeight) {
+                            scrollPosition = tableHeight - containerHeight;
+                            direction = -1;
+                            isPaused = true;
+                            setTimeout(() => { isPaused = false; }, pauseAtEnd);
+                        }
+                        
+                        // Vérifier si on atteint le haut
+                        if (scrollPosition <= 0) {
+                            scrollPosition = 0;
+                            direction = 1;
+                            isPaused = true;
+                            setTimeout(() => { isPaused = false; }, pauseAtEnd);
+                        }
+                        
+                        container.scrollTop = scrollPosition;
+                    }
+                    
+                    // Démarrer l'auto-scroll (vitesse ajustable)
+                    setInterval(autoScroll, scrollSpeed);
+                    
+                    // Pause au survol
+                    container.addEventListener('mouseenter', () => {
+                        isPaused = true;
+                    });
+                    
+                    container.addEventListener('mouseleave', () => {
+                        isPaused = false;
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

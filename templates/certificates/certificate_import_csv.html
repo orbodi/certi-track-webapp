@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block title %}Import CSV - CertiTrack{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4><i class="bi bi-file-earmark-spreadsheet"></i> Import CSV avec Preview</h4>
+                </div>
+                <div class="card-body">
+                    {% if not preview_mode %}
+                    <!-- Formulaire d'upload -->
+                    <div class="alert alert-info">
+                        <h5><i class="bi bi-info-circle"></i> Format attendu</h5>
+                        <p>Le fichier CSV doit contenir les colonnes suivantes séparées par tabulation :</p>
+                        <code>Délivré à | Délivré par | Date d'expiration | Rôles prévus | Nom convivial | Statut | Modèle de certificat</code>
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.csv_file.label }} *</label>
+                            {% render_field form.csv_file class="form-control" %}
+                            <small class="form-text text-muted">{{ form.csv_file.help_text }}</small>
+                            {% if form.csv_file.errors %}
+                            <div class="text-danger">{{ form.csv_file.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.delimiter.label }}</label>
+                                {% render_field form.delimiter class="form-select" %}
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.default_environment.label }}</label>
+                                {% render_field form.default_environment class="form-select" %}
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check mt-4">
+                                    {% render_field form.skip_header class="form-check-input" %}
+                                    <label class="form-check-label">{{ form.skip_header.label }}</label>
+                                </div>
+                                <div class="form-check">
+                                    {% render_field form.auto_enrich class="form-check-input" %}
+                                    <label class="form-check-label">{{ form.auto_enrich.label }}</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'certificates:import_choice' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Retour
+                            </a>
+                            <button type="submit" name="preview" class="btn btn-primary">
+                                <i class="bi bi-eye"></i> Prévisualiser
+                            </button>
+                        </div>
+                    </form>
+
+                    {% else %}
+                    <!-- Preview des données -->
+                    <div class="alert alert-success">
+                        <h5><i class="bi bi-check-circle"></i> Preview des données</h5>
+                        <p>{{ preview_data|length }} ligne(s) détectée(s). Vérifiez les données avant de confirmer l'import.</p>
+                    </div>
+
+                    <div class="table-responsive mb-4">
+                        <table class="table table-bordered table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Délivré à</th>
+                                    <th>Délivré par</th>
+                                    <th>Expiration</th>
+                                    <th>Rôles</th>
+                                    <th>Template</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cert in preview_data %}
+                                <tr {% if cert.error %}class="table-danger"{% endif %}>
+                                    <td>{{ cert.line_number }}</td>
+                                    {% if cert.error %}
+                                    <td colspan="6">
+                                        <i class="bi bi-exclamation-triangle text-danger"></i> {{ cert.error }}
+                                    </td>
+                                    {% else %}
+                                    <td><strong>{{ cert.common_name }}</strong></td>
+                                    <td><small>{{ cert.issuer }}</small></td>
+                                    <td>{{ cert.valid_until|date:"d/m/Y"|default:"-" }}</td>
+                                    <td><small>{{ cert.key_usage|default:"-" }}</small></td>
+                                    <td><small>{{ cert.template_name|default:"-" }}</small></td>
+                                    <td>
+                                        {% if cert.valid_until %}
+                                        <span class="badge bg-success">OK</span>
+                                        {% else %}
+                                        <span class="badge bg-warning">Date manquante</span>
+                                        {% endif %}
+                                    </td>
+                                    {% endif %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {% for field in form %}
+                            {{ field.as_hidden }}
+                        {% endfor %}
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'certificates:import_csv' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Modifier
+                            </a>
+                            <button type="submit" name="confirm" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i> Confirmer l'import
+                            </button>
+                        </div>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

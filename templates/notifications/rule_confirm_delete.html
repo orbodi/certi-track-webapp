@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Supprimer Règle - CertiTrack{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4><i class="bi bi-trash"></i> Confirmer la Suppression</h4>
+                </div>
+                <div class="card-body">
+                    <p>Êtes-vous sûr de vouloir supprimer cette règle de notification ?</p>
+                    
+                    <div class="alert alert-warning">
+                        <strong>{{ object.name }}</strong><br>
+                        <small>{{ object.days_before_expiration }} jours avant expiration</small><br>
+                        <small>{{ object.get_recipients_list|length }} destinataire(s)</small>
+                    </div>
+
+                    <p class="text-danger"><strong>Cette action est irréversible.</strong></p>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'notifications:rule_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Annuler
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Supprimer
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+

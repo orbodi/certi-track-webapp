@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Configuration Email</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f8;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #52B788 0%, #74C69D 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .content {
+            padding: 30px 20px;
+        }
+        .success-box {
+            background-color: #E8F5E9;
+            border-left: 4px solid #52B788;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 6px;
+        }
+        .success-box h2 {
+            margin: 0 0 10px 0;
+            color: #2E7D32;
+            font-size: 20px;
+        }
+        .config-details {
+            background-color: #E8E9EA;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .config-details table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .config-details td {
+            padding: 8px 0;
+            font-size: 14px;
+        }
+        .config-details td:first-child {
+            font-weight: 600;
+            color: #58595B;
+            width: 40%;
+        }
+        .button {
+            display: inline-block;
+            background: linear-gradient(135deg, #0066B3 0%, #3399CC 100%);
+            color: white;
+            padding: 14px 28px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            margin: 20px 0;
+            box-shadow: 0 4px 12px rgba(0, 102, 179, 0.3);
+        }
+        .footer {
+            background-color: #E8E9EA;
+            padding: 20px;
+            text-align: center;
+            color: #7A7B7D;
+            font-size: 13px;
+            border-top: 3px solid #52B788;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div style="font-size: 48px; margin-bottom: 10px;">✓</div>
+            <h1>Test de Configuration Email</h1>
+        </div>
+
+        <div class="content">
+            <div class="success-box">
+                <h2>✓ Configuration SMTP Réussie !</h2>
+                <p>Si vous recevez cet email, votre configuration CertiTrack fonctionne parfaitement.</p>
+            </div>
+
+            <p>Bonjour,</p>
+            <p>Cet email de test confirme que votre serveur SMTP est correctement configuré.</p>
+
+            <div class="config-details">
+                <table>
+                    <tr>
+                        <td>Serveur SMTP :</td>
+                        <td><strong>{{ email_settings.smtp_host }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Port :</td>
+                        <td><strong>{{ email_settings.smtp_port }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td>TLS :</td>
+                        <td>{{ email_settings.smtp_use_tls|yesno:"Oui,Non" }}</td>
+                    </tr>
+                    <tr>
+                        <td>SSL :</td>
+                        <td>{{ email_settings.smtp_use_ssl|yesno:"Oui,Non" }}</td>
+                    </tr>
+                    <tr>
+                        <td>Utilisateur :</td>
+                        <td>{{ email_settings.smtp_username }}</td>
+                    </tr>
+                    <tr>
+                        <td>Date du test :</td>
+                        <td>{{ current_date|date:"d/m/Y à H:i" }}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <p><strong>Prochaines étapes :</strong></p>
+            <ul>
+                <li>Configurez les règles de notification (30 jours et 7 jours)</li>
+                <li>Ajoutez les destinataires pour les alertes</li>
+                <li>Importez vos certificats SSL/TLS</li>
+                <li>Les alertes seront envoyées automatiquement</li>
+            </ul>
+
+            <center>
+                <a href="{{ base_url }}/notifications/rules/" class="button">
+                    Gérer les Règles de Notification
+                </a>
+            </center>
+        </div>
+
+        <div class="footer">
+            <p><strong>CertiTrack</strong> - Gestion des Certificats SSL/TLS</p>
+            <p>Powered by <strong>Atos Meda TOGO</strong></p>
+            <p style="font-size: 11px;">{{ current_date|date:"d/m/Y à H:i" }}</p>
+        </div>
+    </div>
+</body>
+</html>
+

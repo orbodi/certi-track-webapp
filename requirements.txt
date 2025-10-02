@@ -1,0 +1,46 @@
+# Core Django
+Django>=4.2,<5.0
+djangorestframework>=3.14.0
+django-environ>=0.11.0
+
+# Database
+psycopg2-binary>=2.9.9  # PostgreSQL (optionnel, SQLite par défaut)
+
+# Authentication & Security
+djangorestframework-simplejwt>=5.3.0
+django-cors-headers>=4.3.0
+django-axes>=6.1.0
+
+# Async Tasks (pour enrichissement automatique futur)
+celery>=5.3.0
+redis>=5.0.0
+django-celery-beat>=2.5.0  # Planification Celery dynamique via DB
+
+# Certificate Handling
+cryptography>=41.0.0
+pyOpenSSL>=23.3.0
+
+# Forms & UI
+django-widget-tweaks>=1.5.0
+django-crispy-forms>=2.1
+crispy-bootstrap5>=2.0.0
+
+# Monitoring & Logs
+sentry-sdk>=1.40.0
+django-extensions>=3.2.3
+
+# Testing
+pytest>=7.4.3
+pytest-django>=4.7.0
+factory-boy>=3.3.0
+coverage>=7.3.0
+
+# Production Server
+gunicorn>=21.2.0
+whitenoise>=6.6.0
+
+# Dev Tools
+black>=23.12.0
+flake8>=6.1.0
+isort>=5.13.0
+

@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block title %}Scan en Masse - CertiTrack{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header bg-info text-white">
+            <h4><i class="bi bi-collection"></i> Scanner Plusieurs Domaines</h4>
+        </div>
+        <div class="card-body">
+            {% if not preview_mode %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i>
+                Entrez un nom de domaine par ligne. Maximum 50 domaines.
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label class="form-label">{{ form.hostnames.label }} *</label>
+                    {% render_field form.hostnames class="form-control" %}
+                    <small class="form-text text-muted">{{ form.hostnames.help_text }}</small>
+                    {% if form.hostnames.errors %}
+                    <div class="text-danger">{{ form.hostnames.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.port.label }}</label>
+                        {% render_field form.port class="form-control" %}
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ form.environment.label }}</label>
+                        {% render_field form.environment class="form-select" %}
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'certificates:import_choice' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Retour
+                    </a>
+                    <button type="submit" name="preview" class="btn btn-info text-white">
+                        <i class="bi bi-search"></i> Scanner ({{ form.hostnames.value|length }} domaines)
+                    </button>
+                </div>
+            </form>
+
+            {% else %}
+            <div class="alert alert-success">
+                <h5><i class="bi bi-check-circle"></i> Scan terminé!</h5>
+                <p>{{ scan_results|length }} domaine(s) scanné(s). Vérifiez les résultats avant de confirmer.</p>
+            </div>
+
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered table-sm">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Domaine</th>
+                            <th>Common Name</th>
+                            <th>Délivré par</th>
+                            <th>Expiration</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for result in scan_results %}
+                        <tr {% if not result.success %}class="table-danger"{% endif %}>
+                            <td>{{ result.hostname }}</td>
+                            {% if result.success %}
+                            <td>{{ result.common_name }}</td>
+                            <td><small>{{ result.issuer }}</small></td>
+                            <td>{{ result.valid_until|date:"d/m/Y" }}</td>
+                            <td><span class="badge bg-success">OK</span></td>
+                            {% else %}
+                            <td colspan="3">
+                                <i class="bi bi-exclamation-triangle"></i> {{ result.error }}
+                            </td>
+                            <td><span class="badge bg-danger">Erreur</span></td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                    {{ field.as_hidden }}
+                {% endfor %}
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'certificates:import_scan_bulk' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Modifier
+                    </a>
+                    <button type="submit" name="confirm" class="btn btn-success">
+                        <i class="bi bi-check-circle"></i> Confirmer l'import
+                    </button>
+                </div>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+

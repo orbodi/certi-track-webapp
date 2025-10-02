@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CertiTrack - Gestion des Certificats SSL/TLS</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+    
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, #0066B3 0%, #3399CC 100%);
+            color: white;
+            padding: 100px 0;
+            text-align: center;
+        }
+        .hero-section h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        .hero-section .lead {
+            font-size: 1.5rem;
+            opacity: 0.95;
+            margin-bottom: 2rem;
+        }
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #0066B3;
+        }
+        .stats-section {
+            background-color: #f8f9fa;
+            padding: 60px 0;
+        }
+        .cta-section {
+            background: linear-gradient(135deg, #E8F5E9 0%, #E1F5FE 100%);
+            padding: 80px 0;
+        }
+        .feature-card {
+            height: 100%;
+            transition: all 0.3s ease;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 8px 24px rgba(0,102,179,0.2);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar Simple -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <i class="bi bi-shield-lock"></i> CertiTrack
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'help' %}">
+                            <i class="bi bi-question-circle"></i> Aide
+                        </a>
+                    </li>
+                    {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'certificates:list' %}">
+                            <i class="bi bi-shield-lock"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'notifications:dashboard' %}">
+                            <i class="bi bi-bell"></i> Notifications
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> {{ user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item">
+                                        <i class="bi bi-box-arrow-right"></i> Déconnexion
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link btn btn-light btn-sm px-4" href="{% url 'login' %}">
+                            <i class="bi bi-box-arrow-in-right"></i> Connexion
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 offset-lg-2">
+                    <div style="font-size: 5rem; margin-bottom: 1rem;">🔒</div>
+                    <h1>CertiTrack</h1>
+                    <p class="lead">Gestion Intelligente de vos Certificats SSL/TLS</p>
+                    <p class="mb-4">
+                        Gérez, surveillez et recevez des alertes pour tous vos certificats SSL/TLS en un seul endroit.
+                        Ne laissez plus jamais un certificat expirer.
+                    </p>
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'certificates:list' %}" class="btn btn-light btn-lg px-5 py-3 me-3">
+                        <i class="bi bi-speedometer2"></i> Accéder au Dashboard
+                    </a>
+                    <a href="{% url 'certificates:import_choice' %}" class="btn btn-outline-light btn-lg px-5 py-3">
+                        <i class="bi bi-plus-circle"></i> Ajouter des Certificats
+                    </a>
+                    {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-light btn-lg px-5 py-3">
+                        <i class="bi bi-box-arrow-in-right"></i> Se Connecter
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Statistiques -->
+    {% if has_certificates %}
+    <section class="stats-section">
+        <div class="container">
+            <div class="row text-center">
+                <div class="col-md-3">
+                    <div class="card feature-card bg-primary text-white">
+                        <div class="card-body py-4">
+                            <h2 class="display-4">{{ stats.total }}</h2>
+                            <p class="mb-0">Certificats Gérés</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card feature-card bg-success text-white">
+                        <div class="card-body py-4">
+                            <h2 class="display-4">{{ stats.active }}</h2>
+                            <p class="mb-0">Actifs</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card feature-card bg-warning text-white">
+                        <div class="card-body py-4">
+                            <h2 class="display-4">{{ stats.expiring_soon }}</h2>
+                            <p class="mb-0">Expire Bientôt</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card feature-card bg-info text-white">
+                        <div class="card-body py-4">
+                            <h2 class="display-4">{{ active_rules }}</h2>
+                            <p class="mb-0">Règles Actives</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Fonctionnalités -->
+    <section class="py-5">
+        <div class="container">
+            <div class="row mb-5">
+                <div class="col-12 text-center">
+                    <h2 class="display-5 mb-3">Fonctionnalités Principales</h2>
+                    <p class="lead text-muted">Tout ce dont vous avez besoin pour gérer vos certificats SSL/TLS</p>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <!-- Fonctionnalité 1 -->
+                <div class="col-md-4">
+                    <div class="card feature-card">
+                        <div class="card-body text-center p-4">
+                            <i class="bi bi-upload feature-icon"></i>
+                            <h4>3 Méthodes d'Import</h4>
+                            <p class="text-muted">
+                                Import CSV, scan automatique SSL/TLS ou saisie manuelle. 
+                                Choisissez la méthode qui vous convient.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fonctionnalité 2 -->
+                <div class="col-md-4">
+                    <div class="card feature-card">
+                        <div class="card-body text-center p-4">
+                            <i class="bi bi-bell-fill feature-icon"></i>
+                            <h4>Alertes Automatiques</h4>
+                            <p class="text-muted">
+                                Recevez des emails à 30 et 7 jours avant expiration. 
+                                Ne manquez plus jamais un renouvellement.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fonctionnalité 3 -->
+                <div class="col-md-4">
+                    <div class="card feature-card">
+                        <div class="card-body text-center p-4">
+                            <i class="bi bi-gear-fill feature-icon"></i>
+                            <h4>Configuration Web</h4>
+                            <p class="text-muted">
+                                Configurez tout depuis l'interface : SMTP, règles, 
+                                destinataires. Aucun fichier à modifier.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fonctionnalité 4 -->
+                <div class="col-md-4">
+                    <div class="card feature-card">
+                        <div class="card-body text-center p-4">
+                            <i class="bi bi-graph-up feature-icon"></i>
+                            <h4>Dashboard Complet</h4>
+                            <p class="text-muted">
+                                Statistiques en temps réel, filtres avancés, 
+                                recherche rapide. Vue d'ensemble claire.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fonctionnalité 5 -->
+                <div class="col-md-4">
+                    <div class="card feature-card">
+                        <div class="card-body text-center p-4">
+                            <i class="bi bi-shield-check feature-icon"></i>
+                            <h4>Scan SSL/TLS</h4>
+                            <p class="text-muted">
+                                Récupération automatique des métadonnées : 
+                                SAN, empreinte SHA256, algorithmes, etc.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fonctionnalité 6 -->
+                <div class="col-md-4">
+                    <div class="card feature-card">
+                        <div class="card-body text-center p-4">
+                            <i class="bi bi-journal-text feature-icon"></i>
+                            <h4>Journal Complet</h4>
+                            <p class="text-muted">
+                                Traçabilité de toutes les notifications envoyées. 
+                                Historique complet avec filtres.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section class="cta-section">
+        <div class="container text-center">
+            <h2 class="display-5 mb-4">Prêt à Commencer ?</h2>
+            <p class="lead mb-4">
+                {% if user.is_authenticated %}
+                Accédez au dashboard pour gérer vos certificats SSL/TLS
+                {% else %}
+                Connectez-vous pour accéder à toutes les fonctionnalités
+                {% endif %}
+            </p>
+            {% if user.is_authenticated %}
+            <a href="{% url 'certificates:list' %}" class="btn btn-primary btn-lg px-5 py-3 me-3">
+                <i class="bi bi-speedometer2"></i> Dashboard Certificats
+            </a>
+            <a href="{% url 'notifications:dashboard' %}" class="btn btn-info btn-lg px-5 py-3 text-white">
+                <i class="bi bi-bell"></i> Dashboard Notifications
+            </a>
+            {% else %}
+            <a href="{% url 'login' %}" class="btn btn-primary btn-lg px-5 py-3">
+                <i class="bi bi-box-arrow-in-right"></i> Se Connecter
+            </a>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Workflow -->
+    <section class="py-5 bg-light">
+        <div class="container">
+            <div class="row mb-4">
+                <div class="col-12 text-center">
+                    <h2 class="display-5 mb-3">Comment ça Marche ?</h2>
+                    <p class="lead text-muted">4 étapes simples pour gérer vos certificats</p>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-3 text-center">
+                    <div class="bg-white p-4 rounded shadow-sm">
+                        <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center" 
+                             style="width: 80px; height: 80px; font-size: 2rem; font-weight: bold;">
+                            1
+                        </div>
+                        <h5 class="mt-3">Importez</h5>
+                        <p class="text-muted">
+                            CSV, scan automatique ou saisie manuelle
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-3 text-center">
+                    <div class="bg-white p-4 rounded shadow-sm">
+                        <div class="rounded-circle bg-success text-white d-inline-flex align-items-center justify-content-center" 
+                             style="width: 80px; height: 80px; font-size: 2rem; font-weight: bold;">
+                            2
+                        </div>
+                        <h5 class="mt-3">Configurez</h5>
+                        <p class="text-muted">
+                            SMTP, règles d'alerte, destinataires
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-3 text-center">
+                    <div class="bg-white p-4 rounded shadow-sm">
+                        <div class="rounded-circle bg-warning text-white d-inline-flex align-items-center justify-content-center" 
+                             style="width: 80px; height: 80px; font-size: 2rem; font-weight: bold;">
+                            3
+                        </div>
+                        <h5 class="mt-3">Surveillez</h5>
+                        <p class="text-muted">
+                            Dashboard en temps réel avec statistiques
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-3 text-center">
+                    <div class="bg-white p-4 rounded shadow-sm">
+                        <div class="rounded-circle bg-info text-white d-inline-flex align-items-center justify-content-center" 
+                             style="width: 80px; height: 80px; font-size: 2rem; font-weight: bold;">
+                            4
+                        </div>
+                        <h5 class="mt-3">Recevez</h5>
+                        <p class="text-muted">
+                            Alertes automatiques par email
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer style="background: linear-gradient(135deg, #0066B3 0%, #004A8F 100%); color: white; padding: 40px 0; margin-top: 60px; border-top: 4px solid #009FDF;">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-4 text-center text-md-start mb-4 mb-md-0">
+                    <h4 style="color: white; margin-bottom: 15px;">
+                        <i class="bi bi-shield-lock"></i> CertiTrack
+                    </h4>
+                    <p style="margin: 0; opacity: 0.9; font-size: 14px;">
+                        Gestion des Certificats SSL/TLS
+                    </p>
+                </div>
+                
+                <div class="col-md-4 text-center mb-4 mb-md-0">
+                    <a href="{% url 'help' %}" class="btn btn-light btn-sm mx-2">
+                        <i class="bi bi-question-circle"></i> Aide
+                    </a>
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'certificates:list' %}" class="btn btn-outline-light btn-sm mx-2">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                    {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-outline-light btn-sm mx-2">
+                        <i class="bi bi-box-arrow-in-right"></i> Connexion
+                    </a>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-4 text-center text-md-end">
+                    <p style="margin: 0; font-size: 13px; opacity: 0.8;">
+                        Powered by
+                    </p>
+                    <h4 style="color: white; margin: 10px 0; font-weight: 700; letter-spacing: 0.5px;">
+                        Atos Meda TOGO
+                    </h4>
+                    {% if user.is_authenticated %}
+                    <p style="margin: 0; font-size: 12px; opacity: 0.7;">
+                        Connecté : <strong>{{ user.username }}</strong>
+                    </p>
+                    {% endif %}
+                    <p style="margin: 5px 0 0 0; font-size: 11px; opacity: 0.6;">
+                        &copy; 2025 - Tous droits réservés
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

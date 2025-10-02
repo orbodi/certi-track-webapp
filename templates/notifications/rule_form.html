@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block title %}{% if form.instance.pk %}Modifier{% else %}Créer{% endif %} Règle - CertiTrack{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4>
+                        <i class="bi bi-bell"></i> 
+                        {% if form.instance.pk %}Modifier la Règle{% else %}Créer une Règle de Notification{% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                        {% endif %}
+
+                        <h5 class="mb-3">Informations de Base</h5>
+                        
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label class="form-label">{{ form.name.label }} *</label>
+                                {% render_field form.name class="form-control" %}
+                                <small class="form-text text-muted">{{ form.name.help_text }}</small>
+                                {% if form.name.errors %}
+                                <div class="text-danger">{{ form.name.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.days_before_expiration.label }} *</label>
+                                {% render_field form.days_before_expiration class="form-control" %}
+                                <small class="form-text text-muted">{{ form.days_before_expiration.help_text }}</small>
+                                {% if form.days_before_expiration.errors %}
+                                <div class="text-danger">{{ form.days_before_expiration.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <hr>
+                        <h5 class="mb-3">Configuration Email</h5>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.notification_type.label }}</label>
+                                {% render_field form.notification_type class="form-select" %}
+                                {% if form.notification_type.errors %}
+                                <div class="text-danger">{{ form.notification_type.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.email_subject.label }}</label>
+                                {% render_field form.email_subject class="form-control" %}
+                                {% if form.email_subject.errors %}
+                                <div class="text-danger">{{ form.email_subject.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.email_recipients.label }} *</label>
+                            {% render_field form.email_recipients class="form-control" %}
+                            <small class="form-text text-muted">{{ form.email_recipients.help_text }}</small>
+                            {% if form.email_recipients.errors %}
+                            <div class="text-danger">{{ form.email_recipients.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.webhook_url.label }}</label>
+                            {% render_field form.webhook_url class="form-control" %}
+                            <small class="form-text text-muted">{{ form.webhook_url.help_text }}</small>
+                            {% if form.webhook_url.errors %}
+                            <div class="text-danger">{{ form.webhook_url.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <hr>
+                        <h5 class="mb-3">Filtres (Optionnel)</h5>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.filter_by_environment.label }}</label>
+                                {% render_field form.filter_by_environment class="form-select" %}
+                                <small class="form-text text-muted">{{ form.filter_by_environment.help_text }}</small>
+                                {% if form.filter_by_environment.errors %}
+                                <div class="text-danger">{{ form.filter_by_environment.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.filter_by_issuer.label }}</label>
+                                {% render_field form.filter_by_issuer class="form-control" %}
+                                <small class="form-text text-muted">{{ form.filter_by_issuer.help_text }}</small>
+                                {% if form.filter_by_issuer.errors %}
+                                <div class="text-danger">{{ form.filter_by_issuer.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <hr>
+                        <div class="mb-3 form-check">
+                            {% render_field form.is_active class="form-check-input" %}
+                            <label class="form-check-label">{{ form.is_active.label }}</label>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'notifications:rule_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Annuler
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Enregistrer
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+

@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Notifications - CertiTrack{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5"><i class="bi bi-bell"></i> Dashboard Notifications</h1>
+            <p class="lead">Gestion centralisée des alertes et notifications</p>
+        </div>
+    </div>
+
+    <!-- Statistiques -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-bell"></i> Aujourd'hui</h5>
+                    <h2>{{ logs_stats.today_sent }}</h2>
+                    <small>email(s) envoyé(s)</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-calendar-week"></i> Cette semaine</h5>
+                    <h2>{{ logs_stats.week_sent }}</h2>
+                    <small>email(s) envoyé(s)</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-check-circle"></i> Règles Actives</h5>
+                    <h2>{{ active_rules.count }}</h2>
+                    <small>règle(s)</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-x-circle"></i> Échecs</h5>
+                    <h2>{{ logs_stats.total_failed }}</h2>
+                    <small>erreur(s)</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions Rapides -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="bi bi-lightning"></i> Actions Rapides</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <a href="{% url 'notifications:rule_list' %}" class="btn btn-outline-primary w-100 mb-2">
+                                <i class="bi bi-list-ul"></i><br>Gérer les Règles
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{% url 'notifications:email_settings' %}" class="btn btn-outline-info w-100 mb-2">
+                                <i class="bi bi-gear"></i><br>Configuration Email
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{% url 'notifications:log_list' %}" class="btn btn-outline-secondary w-100 mb-2">
+                                <i class="bi bi-journal"></i><br>Journal
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{% url 'certificates:list' %}" class="btn btn-outline-success w-100 mb-2">
+                                <i class="bi bi-shield-lock"></i><br>Certificats
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Règles Actives et Certificats -->
+    <div class="row">
+        <!-- Règles Actives -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5><i class="bi bi-bell-fill"></i> Règles Actives</h5>
+                </div>
+                <div class="card-body">
+                    {% if active_rules %}
+                    <div class="list-group">
+                        {% for rule in active_rules %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ rule.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        <i class="bi bi-clock"></i> {{ rule.days_before_expiration }} jour(s)
+                                        | <i class="bi bi-envelope"></i> {{ rule.get_recipients_list|length }} destinataire(s)
+                                    </small>
+                                </div>
+                                <a href="{% url 'notifications:rule_edit' rule.pk %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center">Aucune règle active</p>
+                    <a href="{% url 'notifications:rule_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Créer une règle
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Certificats Expirant -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5><i class="bi bi-exclamation-triangle"></i> Certificats Expirant Bientôt</h5>
+                </div>
+                <div class="card-body">
+                    {% if expiring_certs %}
+                    <div class="list-group">
+                        {% for cert in expiring_certs %}
+                        <a href="{% url 'certificates:detail' cert.pk %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ cert.common_name }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ cert.valid_until|date:"d/m/Y" }}</small>
+                                </div>
+                                <span class="badge bg-{{ cert.expiration_color }}">
+                                    {% if cert.days_until_expiration is not None %}
+                                        {{ cert.days_until_expiration }} jour(s)
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-success text-center">
+                        <i class="bi bi-check-circle"></i> Aucun certificat expirant bientôt
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+
+

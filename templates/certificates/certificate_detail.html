@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% load certificate_filters %}
+
+{% block title %}{{ certificate.common_name }} - CertiTrack{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-3">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'certificates:list' %}">Certificats</a></li>
+                    <li class="breadcrumb-item active">{{ certificate.common_name }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-{{ certificate.expiration_color }} {% if certificate.expiration_color != 'warning' %}text-white{% endif %}">
+                    <h4><i class="bi bi-shield-lock"></i> {{ certificate.common_name }}</h4>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th width="30%">Délivré par</th>
+                            <td>{{ certificate.issuer }}</td>
+                        </tr>
+                        {% if certificate.valid_from %}
+                        <tr>
+                            <th>Valide depuis</th>
+                            <td>{{ certificate.valid_from|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <th>Expire le</th>
+                            <td>
+                                <strong>{{ certificate.valid_until|date:"d/m/Y H:i" }}</strong>
+                                {% if certificate.days_until_expiration is not None %}
+                                <br><span class="badge bg-{{ certificate.expiration_color }}">
+                                    {% if certificate.is_expired %}
+                                    Expiré depuis {{ certificate.days_until_expiration|abs }} jours
+                                    {% else %}
+                                    {{ certificate.days_until_expiration }} jours restants
+                                    {% endif %}
+                                </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Statut</th>
+                            <td>
+                                <span class="badge bg-{{ certificate.expiration_color }}">
+                                    {{ certificate.get_status_display }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% if certificate.key_usage %}
+                        <tr>
+                            <th>Rôles</th>
+                            <td>{{ certificate.key_usage }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if certificate.template_name %}
+                        <tr>
+                            <th>Modèle</th>
+                            <td><code>{{ certificate.template_name }}</code></td>
+                        </tr>
+                        {% endif %}
+                        {% if certificate.environment %}
+                        <tr>
+                            <th>Environnement</th>
+                            <td><span class="badge bg-info">{{ certificate.get_environment_display }}</span></td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+
+            {% if certificate.pem_data %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Détails Techniques</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless table-sm">
+                        {% if certificate.serial_number %}
+                        <tr>
+                            <th width="30%">Numéro de série</th>
+                            <td><code>{{ certificate.serial_number }}</code></td>
+                        </tr>
+                        {% endif %}
+                        {% if certificate.fingerprint_sha256 %}
+                        <tr>
+                            <th>Empreinte SHA256</th>
+                            <td><small><code>{{ certificate.fingerprint_sha256 }}</code></small></td>
+                        </tr>
+                        {% endif %}
+                        {% if certificate.signature_algorithm %}
+                        <tr>
+                            <th>Algorithme</th>
+                            <td>{{ certificate.signature_algorithm }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if certificate.public_key_size %}
+                        <tr>
+                            <th>Taille clé</th>
+                            <td>{{ certificate.public_key_size }} bits</td>
+                        </tr>
+                        {% endif %}
+                        {% if certificate.san_list %}
+                        <tr>
+                            <th>SAN</th>
+                            <td>
+                                {% for san in certificate.san_list %}
+                                <span class="badge bg-secondary">{{ san }}</span><br>
+                                {% endfor %}
+                            </td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <th>Auto-signé</th>
+                            <td>
+                                {% if certificate.is_self_signed %}
+                                <span class="badge bg-warning">Oui</span>
+                                {% else %}
+                                <span class="badge bg-success">Non</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'certificates:edit' certificate.pk %}" class="btn btn-outline-primary">
+                            <i class="bi bi-pencil"></i> Modifier
+                        </a>
+                        <a href="{% url 'certificates:delete' certificate.pk %}" class="btn btn-outline-danger">
+                            <i class="bi bi-trash"></i> Supprimer
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5>Métadonnées</h5>
+                </div>
+                <div class="card-body">
+                    <p><small>
+                        <strong>Méthode d'import:</strong><br>
+                        <span class="badge bg-secondary">{{ certificate.get_import_method_display }}</span>
+                    </small></p>
+
+                    {% if certificate.last_scanned %}
+                    <p><small>
+                        <strong>Dernier scan:</strong><br>
+                        {{ certificate.last_scanned|date:"d/m/Y H:i" }}
+                    </small></p>
+                    {% endif %}
+
+                    <p><small>
+                        <strong>Créé le:</strong><br>
+                        {{ certificate.created_at|date:"d/m/Y H:i" }}
+                    </small></p>
+
+                    {% if certificate.created_by %}
+                    <p><small>
+                        <strong>Créé par:</strong><br>
+                        {{ certificate.created_by.username }}
+                    </small></p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - CertiTrack{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'notifications:celery_schedules' %}">Tâches Celery</a></li>
+                    <li class="breadcrumb-item active">{{ title }}</li>
+                </ol>
+            </nav>
+            <h1 class="display-5"><i class="bi bi-calendar-plus"></i> {{ title }}</h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-10 offset-lg-1">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-gear"></i> Configuration de la tâche</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if form.errors %}
+                        <div class="alert alert-danger">
+                            <strong>Erreur :</strong> Veuillez corriger les erreurs ci-dessous.
+                        </div>
+                        {% endif %}
+
+                        <!-- Informations de base -->
+                        <h6 class="border-bottom pb-2 mb-3">📝 Informations de base</h6>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.name.label }} <span class="text-danger">*</span></label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="text-danger">{{ form.name.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">Nom descriptif de la tâche</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.task.label }} <span class="text-danger">*</span></label>
+                            {{ form.task }}
+                            {% if form.task.errors %}
+                                <div class="text-danger">{{ form.task.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">{{ form.task.help_text }}</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.description.label }}</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="text-danger">{{ form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Type de planification -->
+                        <h6 class="border-bottom pb-2 mb-3 mt-4">⏰ Planification</h6>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.schedule_type.label }}</label>
+                            {{ form.schedule_type }}
+                        </div>
+
+                        <!-- Crontab Fields -->
+                        <div id="crontab-fields">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i>
+                                <strong>Planification Crontab :</strong> Définissez un horaire fixe pour l'exécution de la tâche.
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">{{ form.crontab_hour.label }}</label>
+                                        {{ form.crontab_hour }}
+                                        <small class="form-text text-muted">{{ form.crontab_hour.help_text }}</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">{{ form.crontab_minute.label }}</label>
+                                        {{ form.crontab_minute }}
+                                        <small class="form-text text-muted">{{ form.crontab_minute.help_text }}</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">{{ form.crontab_day_of_week.label }}</label>
+                                        {{ form.crontab_day_of_week }}
+                                        <small class="form-text text-muted">{{ form.crontab_day_of_week.help_text }}</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">{{ form.crontab_day_of_month.label }}</label>
+                                        {{ form.crontab_day_of_month }}
+                                        <small class="form-text text-muted">{{ form.crontab_day_of_month.help_text }}</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label">{{ form.crontab_month_of_year.label }}</label>
+                                        {{ form.crontab_month_of_year }}
+                                        <small class="form-text text-muted">{{ form.crontab_month_of_year.help_text }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Interval Fields -->
+                        <div id="interval-fields" style="display:none;">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i>
+                                <strong>Planification par Intervalle :</strong> La tâche s'exécutera de manière répétitive à intervalle régulier.
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">{{ form.interval_every.label }}</label>
+                                        {{ form.interval_every }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">{{ form.interval_period.label }}</label>
+                                        {{ form.interval_period }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Arguments (Avancé) -->
+                        <h6 class="border-bottom pb-2 mb-3 mt-4">🔧 Paramètres avancés</h6>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">{{ form.args.label }}</label>
+                                    {{ form.args }}
+                                    <small class="form-text text-muted">{{ form.args.help_text }}</small>
+                                    {% if form.args.errors %}
+                                        <div class="text-danger">{{ form.args.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">{{ form.kwargs.label }}</label>
+                                    {{ form.kwargs }}
+                                    <small class="form-text text-muted">{{ form.kwargs.help_text }}</small>
+                                    {% if form.kwargs.errors %}
+                                        <div class="text-danger">{{ form.kwargs.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Options -->
+                        <div class="mb-3 form-check">
+                            {{ form.enabled }}
+                            <label class="form-check-label" for="{{ form.enabled.id_for_label }}">
+                                {{ form.enabled.label }}
+                            </label>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            {{ form.one_off }}
+                            <label class="form-check-label" for="{{ form.one_off.id_for_label }}">
+                                {{ form.one_off.label }}
+                            </label>
+                            <br><small class="form-text text-muted">{{ form.one_off.help_text }}</small>
+                        </div>
+
+                        <!-- Boutons d'action -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'notifications:celery_schedules' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Annuler
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> {% if action == 'create' %}Créer la tâche{% else %}Enregistrer les modifications{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Aide -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-lightbulb"></i> Aide</h6>
+                </div>
+                <div class="card-body">
+                    <h6>Tâches disponibles :</h6>
+                    <ul class="small">
+                        <li><code>notifications.tasks.check_certificate_expirations</code> - Vérifier les certificats expirant</li>
+                        <li><code>notifications.tasks.send_daily_summary_task</code> - Envoyer le résumé quotidien</li>
+                        <li><code>certificates.tasks.auto_scan_certificates</code> - Scanner automatiquement les certificats</li>
+                    </ul>
+                    
+                    <h6 class="mt-3">Exemples de planification Crontab :</h6>
+                    <ul class="small">
+                        <li>Tous les jours à 8h00 : <code>0 8 * * *</code></li>
+                        <li>Toutes les heures : <code>0 * * * *</code></li>
+                        <li>Tous les lundis à 9h00 : <code>0 9 * * 1</code></li>
+                        <li>Toutes les 5 minutes : <code>*/5 * * * *</code></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Afficher/masquer les champs selon le type de planification
+document.addEventListener('DOMContentLoaded', function() {
+    const scheduleType = document.getElementById('id_schedule_type');
+    const crontabFields = document.getElementById('crontab-fields');
+    const intervalFields = document.getElementById('interval-fields');
+    
+    function toggleFields() {
+        if (scheduleType.value === 'crontab') {
+            crontabFields.style.display = 'block';
+            intervalFields.style.display = 'none';
+        } else {
+            crontabFields.style.display = 'none';
+            intervalFields.style.display = 'block';
+        }
+    }
+    
+    scheduleType.addEventListener('change', toggleFields);
+    toggleFields(); // Initial state
+});
+</script>
+{% endblock %}
+

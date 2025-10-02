@@ -1,0 +1,427 @@
+{% extends "base.html" %}
+
+{% block title %}Documentation & Aide - CertiTrack{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5"><i class="bi bi-question-circle"></i> Documentation & Aide</h1>
+            <p class="lead">Tout ce que vous devez savoir pour utiliser CertiTrack</p>
+        </div>
+    </div>
+
+    <!-- Démarrage Rapide -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h4><i class="bi bi-rocket"></i> Démarrage Rapide</h4>
+        </div>
+        <div class="card-body">
+            <h5>1. Se Connecter</h5>
+            <p>Accédez à <a href="{% url 'login' %}">la page de connexion</a> et entrez vos identifiants.</p>
+            
+            <h5>2. Importer des Certificats</h5>
+            <p>Trois méthodes disponibles :</p>
+            <ul>
+                <li><strong>Saisie Manuelle</strong> : Formulaire guidé pour un seul certificat</li>
+                <li><strong>Import CSV</strong> : Import en masse depuis export CA Windows</li>
+                <li><strong>Scan Domaine</strong> : Récupération automatique via connexion SSL/TLS</li>
+            </ul>
+            
+            <h5>3. Configurer les Alertes</h5>
+            <p>
+                Menu utilisateur → <strong>Configuration</strong> → Configurez le serveur SMTP<br>
+                <strong>Règles</strong> → Modifiez les destinataires des alertes (30j et 7j)
+            </p>
+        </div>
+    </div>
+
+    <!-- Guides Disponibles -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3 class="mb-3"><i class="bi bi-book"></i> Guides Disponibles</h3>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-file-earmark-text text-primary"></i> README.md</h5>
+                    <p class="card-text">Documentation générale du projet, installation et configuration.</p>
+                    <a href="/static/docs/README.md" class="btn btn-sm btn-outline-primary" target="_blank">Consulter</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-lightning text-warning"></i> QUICK_START.md</h5>
+                    <p class="card-text">Guide de démarrage rapide en 2 minutes.</p>
+                    <a href="/static/docs/QUICK_START.md" class="btn btn-sm btn-outline-warning" target="_blank">Consulter</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-envelope text-success"></i> GUIDE_CONFIG_SMTP_WEB.md</h5>
+                    <p class="card-text">Configuration complète du serveur email via l'interface web.</p>
+                    <a href="/static/docs/GUIDE_CONFIG_SMTP_WEB.md" class="btn btn-sm btn-outline-success" target="_blank">Consulter</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-bell text-info"></i> NOTIFICATION_SETUP.md</h5>
+                    <p class="card-text">Configuration détaillée des alertes et notifications.</p>
+                    <a href="/static/docs/NOTIFICATION_SETUP.md" class="btn btn-sm btn-outline-info" target="_blank">Consulter</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-bookmark text-primary"></i> AIDE_MEMOIRE.md</h5>
+                    <p class="card-text">Aide-mémoire avec commandes et URLs essentielles.</p>
+                    <a href="/static/docs/AIDE_MEMOIRE.md" class="btn btn-sm btn-outline-primary" target="_blank">Consulter</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-journal-code text-secondary"></i> GUIDE_FINAL.md</h5>
+                    <p class="card-text">Guide final complet avec tous les détails.</p>
+                    <a href="/static/docs/GUIDE_FINAL.md" class="btn btn-sm btn-outline-secondary" target="_blank">Consulter</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FAQ -->
+    <div class="card mt-4">
+        <div class="card-header bg-info text-white">
+            <h4><i class="bi bi-question-circle"></i> Questions Fréquentes (FAQ)</h4>
+        </div>
+        <div class="card-body">
+            <div class="accordion" id="faqAccordion">
+                <!-- Question 1 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                            Comment importer mes certificats depuis un CSV ?
+                        </button>
+                    </h2>
+                    <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            <strong>Étapes :</strong>
+                            <ol>
+                                <li>Cliquez sur <strong>Ajouter</strong> dans la navbar</li>
+                                <li>Choisissez <strong>Import CSV</strong></li>
+                                <li>Sélectionnez votre fichier CSV (format CA Windows avec tabulation)</li>
+                                <li>Configurez les options (séparateur, environnement)</li>
+                                <li>Cliquez sur <strong>Prévisualiser</strong></li>
+                                <li>Vérifiez les données affichées</li>
+                                <li>Cliquez sur <strong>Confirmer l'import</strong></li>
+                            </ol>
+                            <p>Un fichier exemple est inclus : <code>exemple_certificats.csv</code></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Question 2 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                            Comment configurer les alertes email ?
+                        </button>
+                    </h2>
+                    <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            <strong>Configuration SMTP :</strong>
+                            <ol>
+                                <li>Menu utilisateur → <strong>Configuration</strong></li>
+                                <li>Section <strong>Configuration SMTP</strong></li>
+                                <li>Remplissez : serveur, port, username, password</li>
+                                <li>Cochez TLS (pour port 587)</li>
+                                <li>Cliquez sur <strong>Enregistrer</strong></li>
+                                <li>Testez avec le bouton <strong>Envoyer Test</strong></li>
+                            </ol>
+                            <strong>Ajouter des destinataires :</strong>
+                            <ol>
+                                <li>Navbar → <strong>Règles</strong></li>
+                                <li>Cliquez sur une règle (ex: "Alerte 30 jours")</li>
+                                <li>Section <strong>Destinataires Email</strong>, ajoutez vos emails (un par ligne)</li>
+                                <li>Cliquez sur <strong>Enregistrer</strong></li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Question 3 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                            Comment scanner un domaine automatiquement ?
+                        </button>
+                    </h2>
+                    <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            <strong>Scan d'un seul domaine :</strong>
+                            <ol>
+                                <li><strong>Ajouter</strong> → <strong>Scanner un domaine</strong></li>
+                                <li>Entrez le FQDN : <code>jenkins.eid.local</code></li>
+                                <li>Port : <code>443</code> (par défaut)</li>
+                                <li>Timeout : <code>5</code> secondes</li>
+                                <li>Décochez "Vérifier SSL" si certificat auto-signé</li>
+                                <li>Cliquez sur <strong>Scanner</strong></li>
+                                <li>Vérifiez les informations extraites</li>
+                                <li>Cliquez sur <strong>Confirmer l'import</strong></li>
+                            </ol>
+                            <strong>Scan en masse :</strong>
+                            <p>
+                                Utilisez <strong>Scanner plusieurs domaines</strong> et entrez un nom par ligne (max 50).
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Question 4 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                            Les emails ne partent pas, que faire ?
+                        </button>
+                    </h2>
+                    <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            <strong>Étapes de diagnostic :</strong>
+                            <ol>
+                                <li>Menu → <strong>Configuration</strong> → Vérifiez les paramètres SMTP</li>
+                                <li>Utilisez le bouton <strong>Envoyer Test</strong></li>
+                                <li>Si erreur, vérifiez :
+                                    <ul>
+                                        <li>Serveur et port corrects (ex: smtp.gmail.com:587)</li>
+                                        <li>Username = email complet</li>
+                                        <li>Password = mot de passe d'application (Gmail)</li>
+                                        <li>TLS coché pour port 587</li>
+                                    </ul>
+                                </li>
+                                <li>Consultez le <strong>Journal</strong> pour voir les erreurs détaillées</li>
+                            </ol>
+                            <strong>Gmail :</strong> Créez un mot de passe d'application sur 
+                            <a href="https://myaccount.google.com/apppasswords" target="_blank">myaccount.google.com/apppasswords</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Question 5 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5">
+                            Comment modifier les destinataires des alertes ?
+                        </button>
+                    </h2>
+                    <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            <strong>Étapes :</strong>
+                            <ol>
+                                <li>Navbar → <strong>Règles</strong></li>
+                                <li>Cliquez sur l'icône <strong>✏️ Modifier</strong> de la règle concernée</li>
+                                <li>Section <strong>Destinataires Email</strong></li>
+                                <li>Ajoutez ou modifiez les emails (un par ligne) :
+                                    <pre>admin@company.com
+security@company.com
+team@company.com</pre>
+                                </li>
+                                <li>Cliquez sur <strong>Enregistrer</strong></li>
+                            </ol>
+                            <p><strong>Note :</strong> Les changements sont immédiats. Les prochaines alertes utiliseront la nouvelle liste.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Commandes Utiles -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h4><i class="bi bi-terminal"></i> Commandes Utiles</h4>
+        </div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Commande</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>python manage.py createsuperuser</code></td>
+                        <td>Créer un nouvel utilisateur</td>
+                    </tr>
+                    <tr>
+                        <td><code>python manage.py init_notification_rules --email admin@company.com</code></td>
+                        <td>Initialiser les règles de notification (30j et 7j)</td>
+                    </tr>
+                    <tr>
+                        <td><code>python manage.py check_expirations --dry-run</code></td>
+                        <td>Tester les alertes sans envoyer d'emails</td>
+                    </tr>
+                    <tr>
+                        <td><code>python manage.py check_expirations</code></td>
+                        <td>Vérifier et envoyer les alertes réelles</td>
+                    </tr>
+                    <tr>
+                        <td><code>python manage.py send_daily_summary</code></td>
+                        <td>Envoyer le résumé quotidien</td>
+                    </tr>
+                    <tr>
+                        <td><code>python manage.py runserver</code></td>
+                        <td>Lancer le serveur de développement</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Format CSV -->
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-dark">
+            <h4><i class="bi bi-file-earmark-spreadsheet"></i> Format CSV Attendu</h4>
+        </div>
+        <div class="card-body">
+            <p>Le fichier CSV doit contenir les colonnes suivantes (séparées par <strong>tabulation</strong>) :</p>
+            <div class="table-responsive">
+                <table class="table table-bordered table-sm">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Délivré à</th>
+                            <th>Délivré par</th>
+                            <th>Date d'expiration</th>
+                            <th>Rôles prévus</th>
+                            <th>Nom convivial</th>
+                            <th>Statut</th>
+                            <th>Modèle de certificat</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>jenkins.eid.local</td>
+                            <td>eid-CA-01-CA</td>
+                            <td>08/10/2025</td>
+                            <td>Authentification du serveur</td>
+                            <td>&lt;Aucun&gt;</td>
+                            <td></td>
+                            <td>CertSSLIdemia</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p><strong>Format de date :</strong> JJ/MM/AAAA (ex: 17/09/2025)</p>
+            <p><strong>Séparateur :</strong> Tabulation (par défaut) ou configurable dans le formulaire</p>
+        </div>
+    </div>
+
+    <!-- Configuration SMTP -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h4><i class="bi bi-gear"></i> Configurations SMTP Courantes</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Gmail</h5>
+                    <ul>
+                        <li>Serveur : <code>smtp.gmail.com</code></li>
+                        <li>Port : <code>587</code></li>
+                        <li>TLS : ✓</li>
+                        <li>Username : Votre email Gmail</li>
+                        <li>Password : Mot de passe d'application</li>
+                    </ul>
+                    <p><small>
+                        <a href="https://myaccount.google.com/apppasswords" target="_blank">
+                            Créer un mot de passe d'application Gmail →
+                        </a>
+                    </small></p>
+                </div>
+
+                <div class="col-md-6">
+                    <h5>Office 365</h5>
+                    <ul>
+                        <li>Serveur : <code>smtp.office365.com</code></li>
+                        <li>Port : <code>587</code></li>
+                        <li>TLS : ✓</li>
+                        <li>Username : Votre email Office 365</li>
+                        <li>Password : Votre mot de passe</li>
+                    </ul>
+                </div>
+
+                <div class="col-md-6">
+                    <h5>Outlook.com</h5>
+                    <ul>
+                        <li>Serveur : <code>smtp-mail.outlook.com</code></li>
+                        <li>Port : <code>587</code></li>
+                        <li>TLS : ✓</li>
+                        <li>Username : Votre email Outlook</li>
+                        <li>Password : Votre mot de passe</li>
+                    </ul>
+                </div>
+
+                <div class="col-md-6">
+                    <h5>SendGrid</h5>
+                    <ul>
+                        <li>Serveur : <code>smtp.sendgrid.net</code></li>
+                        <li>Port : <code>587</code></li>
+                        <li>TLS : ✓</li>
+                        <li>Username : <code>apikey</code></li>
+                        <li>Password : Votre API Key</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Support -->
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h4><i class="bi bi-life-preserver"></i> Support & Contact</h4>
+        </div>
+        <div class="card-body">
+            <p>Pour toute question ou problème :</p>
+            <ul>
+                <li><strong>Documentation complète</strong> : Consultez les guides ci-dessus</li>
+                <li><strong>Journal des notifications</strong> : Pour voir les erreurs d'envoi</li>
+                <li><strong>Test de configuration</strong> : Configuration → Envoyer Test</li>
+                <li><strong>Admin Django</strong> : <a href="/admin/" target="_blank">/admin/</a> (accès staff requis)</li>
+            </ul>
+            
+            <div class="mt-4 p-3 bg-light rounded text-center">
+                <p class="mb-0"><strong>Powered by Atos Meda TOGO</strong></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Retour -->
+    <div class="text-center mb-4">
+        <a href="{% url 'home' %}" class="btn btn-primary">
+            <i class="bi bi-house"></i> Retour à l'accueil
+        </a>
+        {% if user.is_authenticated %}
+        <a href="{% url 'certificates:list' %}" class="btn btn-outline-primary">
+            <i class="bi bi-speedometer2"></i> Dashboard
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

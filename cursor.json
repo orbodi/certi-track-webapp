@@ -1,0 +1,29 @@
+{
+  "style": {
+    "language": "python",
+    "framework": "django",
+    "frontend": ["bootstrap", "javascript"],
+    "database": "SQLite",
+    "testing": "pytest",
+    "formatting": "black"
+  },
+  "rules": [
+    "Utiliser Django REST Framework pour toutes les APIs",
+    "Les templates HTML doivent utiliser Bootstrap 5",
+    "Les appels AJAX doivent se faire en Fetch API ou jQuery",
+    "Les statistiques doivent être affichées avec Chart.js",
+    "Les formulaires doivent avoir une validation côté client en JS",
+    "Utiliser des vues basées sur les classes (CBV)",
+    "Respecter la PEP8 et appliquer Black pour le formatage",
+    "Ne jamais exposer les secrets (DB, SMTP) dans le code, utiliser .env"
+  ],
+  "project": {
+    "description": "Application web Django pour gérer les certificats avec Bootstrap, JavaScript et API REST (inventaire, expirations, notifications, dashboard).",
+    "modules": [
+      "certificates (gestion des certificats et import)",
+      "notifications (alertes internes, mails, webhooks)",
+      "dashboard (statistiques, graphiques, calendrier)",
+      "users (authentification, rôles, permissions)"
+    ]
+  }
+}

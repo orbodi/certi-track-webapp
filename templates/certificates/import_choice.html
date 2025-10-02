@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Choisir méthode d'import - CertiTrack{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5"><i class="bi bi-plus-circle"></i> Ajouter des Certificats</h1>
+            <p class="lead">Choisissez la méthode d'import qui vous convient</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Méthode 1: Saisie Manuelle -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="bi bi-pencil-square text-primary" style="font-size: 4rem;"></i>
+                    </div>
+                    <h5 class="card-title">Saisie Manuelle</h5>
+                    <p class="card-text">
+                        Ajoutez un certificat en remplissant un formulaire basé sur le format CSV.
+                        Idéal pour un seul certificat.
+                    </p>
+                    <ul class="list-unstyled text-start">
+                        <li><i class="bi bi-check-circle text-success"></i> Rapide pour 1 certificat</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Saisie guidée</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Validation en temps réel</li>
+                    </ul>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{% url 'certificates:import_manual' %}" class="btn btn-primary w-100">
+                        <i class="bi bi-pencil"></i> Saisir manuellement
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Méthode 2: Import CSV -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-success">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="bi bi-file-earmark-spreadsheet text-success" style="font-size: 4rem;"></i>
+                    </div>
+                    <h5 class="card-title">Import CSV</h5>
+                    <p class="card-text">
+                        Importez plusieurs certificats depuis un fichier CSV.
+                        Preview avant confirmation. Format: export CA Windows.
+                    </p>
+                    <ul class="list-unstyled text-start">
+                        <li><i class="bi bi-check-circle text-success"></i> Import en masse</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Preview des données</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Détection d'erreurs</li>
+                    </ul>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{% url 'certificates:import_csv' %}" class="btn btn-success w-100">
+                        <i class="bi bi-upload"></i> Importer un CSV
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Méthode 3: Scan Domaine -->
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-info">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="bi bi-diagram-3 text-info" style="font-size: 4rem;"></i>
+                    </div>
+                    <h5 class="card-title">Scan Domaine</h5>
+                    <p class="card-text">
+                        Connectez-vous à un domaine pour récupérer automatiquement
+                        toutes les informations du certificat.
+                    </p>
+                    <ul class="list-unstyled text-start">
+                        <li><i class="bi bi-check-circle text-success"></i> 100% automatique</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Données complètes</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Aucune erreur</li>
+                    </ul>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{% url 'certificates:import_scan' %}" class="btn btn-info w-100 text-white">
+                        <i class="bi bi-search"></i> Scanner un domaine
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scan en masse -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <h5><i class="bi bi-info-circle"></i> Scan en masse</h5>
+                <p class="mb-2">Vous avez plusieurs domaines à scanner ?</p>
+                <a href="{% url 'certificates:import_scan_bulk' %}" class="btn btn-sm btn-outline-info">
+                    <i class="bi bi-collection"></i> Scanner plusieurs domaines
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

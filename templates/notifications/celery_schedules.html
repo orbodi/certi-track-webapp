@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+
+{% block title %}Planification des Tâches Automatiques - CertiTrack{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-5"><i class="bi bi-clock-history"></i> Planification des Tâches Automatiques</h1>
+                    <p class="text-muted">
+                        Configurez les horaires d'exécution des tâches automatiques Celery. 
+                        Les horaires sont en UTC. <strong>Heure actuelle UTC: {{ now|date:"H:i" }}</strong>
+                    </p>
+                </div>
+                <div>
+                    <a href="{% url 'notifications:celery_task_create' %}" class="btn btn-success btn-lg">
+                        <i class="bi bi-plus-circle"></i> Nouvelle Tâche
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if messages %}
+    <div class="row">
+        <div class="col-12">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-calendar-check"></i> Tâches Planifiées</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> 
+                        <strong>Info:</strong> Après modification des horaires, les changements sont appliqués automatiquement. 
+                        Celery Beat détecte les modifications dans la base de données.
+                    </div>
+
+                    {% if tasks %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Tâche</th>
+                                    <th>Description</th>
+                                    <th>Horaire (UTC)</th>
+                                    <th>Statut</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for task in tasks %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ task.name }}</strong>
+                                        <br><small class="text-muted">{{ task.task }}</small>
+                                    </td>
+                                    <td>
+                                        <small>{{ task.description|default:"Aucune description" }}</small>
+                                    </td>
+                                    <td>
+                                        {% if task.crontab %}
+                                        <span class="badge bg-info">
+                                            <i class="bi bi-calendar3"></i> Crontab
+                                        </span>
+                                        <br>
+                                        <small>
+                                            {{ task.crontab.hour }}:{{ task.crontab.minute|stringformat:"02d" }}
+                                            {% if task.crontab.day_of_week != '*' %}
+                                            - Jour {{ task.crontab.day_of_week }}
+                                            {% else %}
+                                            - Quotidien
+                                            {% endif %}
+                                        </small>
+                                        {% elif task.interval %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-arrow-repeat"></i> Intervalle
+                                        </span>
+                                        <br>
+                                        <small>Chaque {{ task.interval.every }} {{ task.interval.period }}</small>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Non planifié</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if task.enabled %}
+                                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Activée</span>
+                                        {% else %}
+                                        <span class="badge bg-danger"><i class="bi bi-x-circle"></i> Désactivée</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#editModal{{ task.id }}"
+                                                    title="Modifier l'horaire">
+                                                <i class="bi bi-clock"></i>
+                                            </button>
+                                            <a href="{% url 'notifications:celery_task_edit' task.id %}" 
+                                               class="btn btn-sm btn-outline-secondary"
+                                               title="Édition complète">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-{% if task.enabled %}warning{% else %}success{% endif %}"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#toggleModal{{ task.id }}"
+                                                    title="{% if task.enabled %}Désactiver{% else %}Activer{% endif %}">
+                                                <i class="bi bi-{% if task.enabled %}pause-circle{% else %}play-circle{% endif %}"></i>
+                                            </button>
+                                            <a href="{% url 'notifications:celery_task_delete' task.id %}" 
+                                               class="btn btn-sm btn-outline-danger"
+                                               title="Supprimer">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Aucune tâche planifiée trouvée.</strong>
+                        <br>Exécutez la commande suivante pour initialiser les tâches:
+                        <br><code>python manage.py init_celery_schedules</code>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modals de modification (en dehors de tous les conteneurs pour éviter les conflits CSS) -->
+{% if tasks %}
+    {% for task in tasks %}
+    <div class="modal fade" id="editModal{{ task.id }}" tabindex="-1" aria-labelledby="modalLabel{{ task.id }}" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" action="{% url 'notifications:celery_schedule_update' task.id %}">
+                    {% csrf_token %}
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalLabel{{ task.id }}">Modifier: {{ task.name }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <p class="form-text">{{ task.description|default:"Aucune description" }}</p>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="hour{{ task.id }}" class="form-label">
+                                        Heure (UTC) <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="hour{{ task.id }}"
+                                           name="hour" 
+                                           min="0" 
+                                           max="23" 
+                                           value="{{ task.crontab.hour|default:0 }}"
+                                           required>
+                                    <small class="form-text text-muted">0-23</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="minute{{ task.id }}" class="form-label">
+                                        Minutes <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="minute{{ task.id }}"
+                                           name="minute" 
+                                           min="0" 
+                                           max="59" 
+                                           value="{{ task.crontab.minute|default:0 }}"
+                                           required>
+                                    <small class="form-text text-muted">0-59</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="day_of_week{{ task.id }}" class="form-label">
+                                Jour de la semaine
+                            </label>
+                            <select class="form-select" 
+                                    id="day_of_week{{ task.id }}"
+                                    name="day_of_week">
+                                <option value="*" {% if task.crontab.day_of_week == '*' %}selected{% endif %}>
+                                    Tous les jours
+                                </option>
+                                <option value="0" {% if task.crontab.day_of_week == '0' %}selected{% endif %}>
+                                    Dimanche
+                                </option>
+                                <option value="1" {% if task.crontab.day_of_week == '1' %}selected{% endif %}>
+                                    Lundi
+                                </option>
+                                <option value="2" {% if task.crontab.day_of_week == '2' %}selected{% endif %}>
+                                    Mardi
+                                </option>
+                                <option value="3" {% if task.crontab.day_of_week == '3' %}selected{% endif %}>
+                                    Mercredi
+                                </option>
+                                <option value="4" {% if task.crontab.day_of_week == '4' %}selected{% endif %}>
+                                    Jeudi
+                                </option>
+                                <option value="5" {% if task.crontab.day_of_week == '5' %}selected{% endif %}>
+                                    Vendredi
+                                </option>
+                                <option value="6" {% if task.crontab.day_of_week == '6' %}selected{% endif %}>
+                                    Samedi
+                                </option>
+                            </select>
+                            <small class="form-text text-muted">
+                                Pour les tâches hebdomadaires uniquement
+                            </small>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" 
+                                   class="form-check-input" 
+                                   id="enabled{{ task.id }}"
+                                   name="enabled" 
+                                   {% if task.enabled %}checked{% endif %}>
+                            <label class="form-check-label" for="enabled{{ task.id }}">
+                                Tâche activée
+                            </label>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>Important:</strong> Les horaires sont en <strong>UTC</strong>. 
+                            Pensez à ajuster selon votre fuseau horaire local.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            Annuler
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Enregistrer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    
+    <!-- Modals de confirmation Toggle (Activer/Désactiver) -->
+    {% for task in tasks %}
+    <div class="modal fade" id="toggleModal{{ task.id }}" tabindex="-1" aria-labelledby="toggleModalLabel{{ task.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header {% if task.enabled %}bg-warning{% else %}bg-success{% endif %} text-white">
+                    <h5 class="modal-title" id="toggleModalLabel{{ task.id }}">
+                        <i class="bi bi-{% if task.enabled %}pause-circle{% else %}play-circle{% endif %}"></i>
+                        {% if task.enabled %}Désactiver{% else %}Activer{% endif %} la tâche
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-{% if task.enabled %}warning{% else %}success{% endif %} border-0">
+                        <i class="bi bi-info-circle"></i>
+                        {% if task.enabled %}
+                        Vous êtes sur le point de <strong>désactiver</strong> cette tâche planifiée.
+                        Elle ne s'exécutera plus automatiquement.
+                        {% else %}
+                        Vous êtes sur le point d'<strong>activer</strong> cette tâche planifiée.
+                        Elle s'exécutera selon son horaire configuré.
+                        {% endif %}
+                    </div>
+                    
+                    <div class="bg-light p-3 rounded">
+                        <h6 class="mb-2"><strong>{{ task.name }}</strong></h6>
+                        <p class="mb-1 small text-muted">{{ task.description|default:"Aucune description" }}</p>
+                        <p class="mb-0 small">
+                            {% if task.crontab %}
+                            <i class="bi bi-clock"></i> Horaire : {{ task.crontab.hour }}:{{ task.crontab.minute|stringformat:"02d" }} UTC
+                            {% elif task.interval %}
+                            <i class="bi bi-arrow-repeat"></i> Intervalle : Toutes les {{ task.interval.every }} {{ task.interval.period }}
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Annuler
+                    </button>
+                    <a href="{% url 'notifications:celery_task_toggle' task.id %}" 
+                       class="btn btn-{% if task.enabled %}warning{% else %}success{% endif %}">
+                        <i class="bi bi-{% if task.enabled %}pause-circle{% else %}play-circle{% endif %}"></i>
+                        {% if task.enabled %}Désactiver{% else %}Activer{% endif %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+{% load certificate_filters %}
+
+{% block title %}Liste des Certificats - CertiTrack{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- En-tête avec statistiques -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5"><i class="bi bi-shield-lock"></i> Certificats SSL/TLS</h1>
+        </div>
+    </div>
+
+    <!-- Statistiques -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-collection"></i> Total</h5>
+                    <h2>{{ stats.total }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-check-circle"></i> Actifs</h5>
+                    <h2>{{ stats.active }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-exclamation-triangle"></i> Expire Bientôt</h5>
+                    <h2>{{ stats.expiring_soon }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-x-circle"></i> Expirés</h5>
+                    <h2>{{ stats.expired }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alertes de filtres actifs -->
+    {% if request.GET.days or request.GET.issuer or request.GET.status or request.GET.environment or request.GET.search %}
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="alert alert-info d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bi bi-funnel"></i>
+                    <strong>Filtres actifs :</strong>
+                    {% if request.GET.days %}
+                        <span class="badge bg-primary">{{ request.GET.days }} jour(s) restant(s)</span>
+                    {% endif %}
+                    {% if request.GET.environment %}
+                        <span class="badge bg-info">Env: {{ request.GET.environment }}</span>
+                    {% endif %}
+                    {% if request.GET.issuer %}
+                        <span class="badge bg-secondary">Émetteur: {{ request.GET.issuer }}</span>
+                    {% endif %}
+                    {% if request.GET.status %}
+                        <span class="badge bg-warning">Statut: {{ request.GET.status }}</span>
+                    {% endif %}
+                    {% if request.GET.search %}
+                        <span class="badge bg-success">Recherche: {{ request.GET.search }}</span>
+                    {% endif %}
+                </div>
+                <a href="{% url 'certificates:list' %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i> Réinitialiser les filtres
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Filtres et recherche -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Recherche</label>
+                    <input type="text" name="search" class="form-control" placeholder="Nom, émetteur, template..." value="{{ current_search }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Statut</label>
+                    <select name="status" class="form-select">
+                        <option value="">Tous</option>
+                        <option value="active" {% if current_status == 'active' %}selected{% endif %}>Actif</option>
+                        <option value="expiring_soon" {% if current_status == 'expiring_soon' %}selected{% endif %}>Expire Bientôt</option>
+                        <option value="expired" {% if current_status == 'expired' %}selected{% endif %}>Expiré</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Environnement</label>
+                    <select name="environment" class="form-select">
+                        <option value="">Tous</option>
+                        <option value="prod" {% if current_environment == 'prod' %}selected{% endif %}>Production</option>
+                        <option value="uat" {% if current_environment == 'uat' %}selected{% endif %}>UAT</option>
+                        <option value="test" {% if current_environment == 'test' %}selected{% endif %}>Test</option>
+                        <option value="dev" {% if current_environment == 'dev' %}selected{% endif %}>Développement</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2"><i class="bi bi-search"></i> Filtrer</button>
+                    <a href="{% url 'certificates:list' %}" class="btn btn-outline-secondary"><i class="bi bi-x"></i></a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Table des certificats -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Liste des certificats</h5>
+            <a href="{% url 'certificates:import_choice' %}" class="btn btn-success btn-sm">
+                <i class="bi bi-plus-circle"></i> Ajouter
+            </a>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Délivré à</th>
+                            <th>Délivré par</th>
+                            <th>Expiration</th>
+                            <th>Jours restants</th>
+                            <th>Statut</th>
+                            <th>Environnement</th>
+                            <th>Template</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cert in certificates %}
+                        <tr>
+                            <td>
+                                <strong>{{ cert.common_name }}</strong>
+                                {% if cert.import_method == 'scan' %}
+                                <i class="bi bi-patch-check text-success" title="Enrichi par scan"></i>
+                                {% endif %}
+                            </td>
+                            <td><small>{{ cert.issuer }}</small></td>
+                            <td>{{ cert.valid_until|date:"d/m/Y" }}</td>
+                            <td>
+                                {% if cert.days_until_expiration is not None %}
+                                    <span class="badge bg-{{ cert.expiration_color }}">
+                                        {% if cert.days_until_expiration < 0 %}
+                                            Expiré depuis {{ cert.days_until_expiration|abs }} jour{{ cert.days_until_expiration|abs|pluralize }}
+                                        {% else %}
+                                            {{ cert.days_until_expiration }} jour{{ cert.days_until_expiration|pluralize }}
+                                        {% endif %}
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if cert.status == 'active' %}
+                                <span class="badge bg-success">Actif</span>
+                                {% elif cert.status == 'expiring_soon' %}
+                                <span class="badge bg-warning text-dark">Expire Bientôt</span>
+                                {% elif cert.status == 'expired' %}
+                                <span class="badge bg-danger">Expiré</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ cert.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if cert.environment %}
+                                <span class="badge bg-info">{{ cert.get_environment_display }}</span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td><small>{{ cert.template_name|default:"-" }}</small></td>
+                            <td>
+                                <a href="{% url 'certificates:detail' cert.pk %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'certificates:edit' cert.pk %}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4">
+                                <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                                <p class="mt-2">Aucun certificat trouvé</p>
+                                <a href="{% url 'certificates:import_choice' %}" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle"></i> Ajouter le premier certificat
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1">Premier</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Précédent</a>
+            </li>
+            {% endif %}
+
+            <li class="page-item active">
+                <span class="page-link">Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}</span>
+            </li>
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Suivant</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Dernier</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+

@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block title %}Scan Domaine - CertiTrack{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h4><i class="bi bi-diagram-3"></i> Scanner un Domaine</h4>
+                </div>
+                <div class="card-body">
+                    {% if not preview_mode %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        Entrez le nom de domaine pour récupérer automatiquement toutes les informations du certificat.
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.hostname.label }} *</label>
+                            {% render_field form.hostname class="form-control" %}
+                            <small class="form-text text-muted">{{ form.hostname.help_text }}</small>
+                            {% if form.hostname.errors %}
+                            <div class="text-danger">{{ form.hostname.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.port.label }}</label>
+                                {% render_field form.port class="form-control" %}
+                                <small class="form-text text-muted">{{ form.port.help_text }}</small>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.timeout.label }}</label>
+                                {% render_field form.timeout class="form-control" %}
+                                <small class="form-text text-muted">{{ form.timeout.help_text }}</small>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.environment.label }}</label>
+                                {% render_field form.environment class="form-select" %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            {% render_field form.verify_ssl class="form-check-input" %}
+                            <label class="form-check-label">{{ form.verify_ssl.label }}</label>
+                            <small class="form-text text-muted d-block">{{ form.verify_ssl.help_text }}</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.notes.label }}</label>
+                            {% render_field form.notes class="form-control" %}
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'certificates:import_choice' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Retour
+                            </a>
+                            <button type="submit" name="preview" class="btn btn-info text-white">
+                                <i class="bi bi-search"></i> Scanner
+                            </button>
+                        </div>
+                    </form>
+
+                    {% else %}
+                    <!-- Preview du résultat du scan -->
+                    <div class="alert alert-success">
+                        <h5><i class="bi bi-check-circle"></i> Certificat récupéré avec succès!</h5>
+                        <p>Vérifiez les informations avant de confirmer l'import.</p>
+                    </div>
+
+                    <table class="table table-bordered mb-4">
+                        <tr>
+                            <th width="30%">Common Name</th>
+                            <td><strong>{{ scan_result.common_name }}</strong></td>
+                        </tr>
+                        <tr>
+                            <th>Délivré par</th>
+                            <td>{{ scan_result.issuer }}</td>
+                        </tr>
+                        <tr>
+                            <th>Valide du</th>
+                            <td>{{ scan_result.valid_from|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        <tr>
+                            <th>Valide jusqu'au</th>
+                            <td>
+                                {{ scan_result.valid_until|date:"d/m/Y H:i" }}
+                                <span class="badge bg-info">Dans {{ scan_result.valid_until|timeuntil }}</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Numéro de série</th>
+                            <td><code>{{ scan_result.serial_number }}</code></td>
+                        </tr>
+                        <tr>
+                            <th>Empreinte SHA256</th>
+                            <td><small><code>{{ scan_result.fingerprint_sha256 }}</code></small></td>
+                        </tr>
+                        <tr>
+                            <th>Algorithme de signature</th>
+                            <td>{{ scan_result.signature_algorithm }}</td>
+                        </tr>
+                        <tr>
+                            <th>Taille clé publique</th>
+                            <td>{{ scan_result.public_key_size }} bits</td>
+                        </tr>
+                        {% if scan_result.key_usage %}
+                        <tr>
+                            <th>Key Usage</th>
+                            <td>{{ scan_result.key_usage }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if scan_result.san_list %}
+                        <tr>
+                            <th>SAN ({{ scan_result.san_list|length }})</th>
+                            <td>
+                                {% for san in scan_result.san_list %}
+                                <span class="badge bg-secondary">{{ san }}</span>
+                                {% endfor %}
+                            </td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <th>Auto-signé</th>
+                            <td>
+                                {% if scan_result.is_self_signed %}
+                                <span class="badge bg-warning">Oui</span>
+                                {% else %}
+                                <span class="badge bg-success">Non</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        {% for field in form %}
+                            {{ field.as_hidden }}
+                        {% endfor %}
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'certificates:import_scan' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Modifier
+                            </a>
+                            <button type="submit" name="confirm" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i> Confirmer l'import
+                            </button>
+                        </div>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block title %}Configuration Email - CertiTrack{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h4><i class="bi bi-gear"></i> Configuration Email Globale</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                        {% endif %}
+
+                        <h5 class="mb-3">Expéditeur</h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.from_name.label }}</label>
+                                {% render_field form.from_name class="form-control" %}
+                                <small class="form-text text-muted">{{ form.from_name.help_text }}</small>
+                                {% if form.from_name.errors %}
+                                <div class="text-danger">{{ form.from_name.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.from_email.label }}</label>
+                                {% render_field form.from_email class="form-control" %}
+                                <small class="form-text text-muted">{{ form.from_email.help_text }}</small>
+                                {% if form.from_email.errors %}
+                                <div class="text-danger">{{ form.from_email.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <hr>
+                        <h5 class="mb-3">Destinataires par Défaut</h5>
+
+                        <div class="mb-3">
+                            <label class="form-label">{{ form.default_recipients.label }}</label>
+                            {% render_field form.default_recipients class="form-control" %}
+                            <small class="form-text text-muted">{{ form.default_recipients.help_text }}</small>
+                            {% if form.default_recipients.errors %}
+                            <div class="text-danger">{{ form.default_recipients.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <hr>
+                        <h5 class="mb-3">Activation</h5>
+
+                        <div class="mb-3 form-check">
+                            {% render_field form.enable_notifications class="form-check-input" %}
+                            <label class="form-check-label">{{ form.enable_notifications.label }}</label>
+                            <br>
+                            <small class="form-text text-muted">{{ form.enable_notifications.help_text }}</small>
+                        </div>
+
+                        <hr>
+                        <h5 class="mb-3">Configuration SMTP</h5>
+                        
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Configuration du serveur email</strong><br>
+                            Ces paramètres remplacent la configuration du fichier .env
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label class="form-label">{{ form.smtp_host.label }}</label>
+                                {% render_field form.smtp_host class="form-control" %}
+                                <small class="form-text text-muted">{{ form.smtp_host.help_text }}</small>
+                                {% if form.smtp_host.errors %}
+                                <div class="text-danger">{{ form.smtp_host.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.smtp_port.label }}</label>
+                                {% render_field form.smtp_port class="form-control" %}
+                                <small class="form-text text-muted">{{ form.smtp_port.help_text }}</small>
+                                {% if form.smtp_port.errors %}
+                                <div class="text-danger">{{ form.smtp_port.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.smtp_username.label }}</label>
+                                {% render_field form.smtp_username class="form-control" %}
+                                <small class="form-text text-muted">{{ form.smtp_username.help_text }}</small>
+                                {% if form.smtp_username.errors %}
+                                <div class="text-danger">{{ form.smtp_username.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.smtp_password.label }}</label>
+                                {% render_field form.smtp_password class="form-control" %}
+                                <small class="form-text text-muted">{{ form.smtp_password.help_text }}</small>
+                                {% if form.smtp_password.errors %}
+                                <div class="text-danger">{{ form.smtp_password.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3 form-check">
+                                {% render_field form.smtp_use_tls class="form-check-input" %}
+                                <label class="form-check-label">{{ form.smtp_use_tls.label }}</label>
+                                <br>
+                                <small class="form-text text-muted">{{ form.smtp_use_tls.help_text }}</small>
+                            </div>
+
+                            <div class="col-md-4 mb-3 form-check">
+                                {% render_field form.smtp_use_ssl class="form-check-input" %}
+                                <label class="form-check-label">{{ form.smtp_use_ssl.label }}</label>
+                                <br>
+                                <small class="form-text text-muted">{{ form.smtp_use_ssl.help_text }}</small>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">{{ form.smtp_timeout.label }}</label>
+                                {% render_field form.smtp_timeout class="form-control" %}
+                                <small class="form-text text-muted">{{ form.smtp_timeout.help_text }}</small>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <strong>Configurations SMTP courantes :</strong><br>
+                            <strong>Gmail :</strong> smtp.gmail.com:587 (TLS) - Utilisez un mot de passe d'application<br>
+                            <strong>Office 365 :</strong> smtp.office365.com:587 (TLS)<br>
+                            <strong>Outlook :</strong> smtp-mail.outlook.com:587 (TLS)<br>
+                            <strong>SendGrid :</strong> smtp.sendgrid.net:587 (TLS) - Username: apikey
+                        </div>
+
+                        <hr>
+                        <h5 class="mb-3">Résumé Quotidien</h5>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3 form-check">
+                                {% render_field form.daily_summary_enabled class="form-check-input" %}
+                                <label class="form-check-label">{{ form.daily_summary_enabled.label }}</label>
+                                <br>
+                                <small class="form-text text-muted">{{ form.daily_summary_enabled.help_text }}</small>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.daily_summary_time.label }}</label>
+                                {% render_field form.daily_summary_time class="form-control" %}
+                                <small class="form-text text-muted">{{ form.daily_summary_time.help_text }}</small>
+                                {% if form.daily_summary_time.errors %}
+                                <div class="text-danger">{{ form.daily_summary_time.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'notifications:rule_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Retour
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Enregistrer
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Test Email -->
+            <div class="card mt-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5><i class="bi bi-envelope-check"></i> Tester la Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <p>Envoyez un email de test pour vérifier votre configuration SMTP.</p>
+                    <form method="post" action="{% url 'notifications:test_email' %}">
+                        {% csrf_token %}
+                        <div class="input-group">
+                            <input type="email" name="recipient" class="form-control" placeholder="email@example.com" required>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-send"></i> Envoyer Test
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

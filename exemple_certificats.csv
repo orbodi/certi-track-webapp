@@ -1,0 +1,10 @@
+Délivré à	Délivré par	Date d'expiration	Rôles prévus	Nom convivial	Statut	Modèle de certificat
+s5t2tstidps01.eid.local	eid-CA-01-CA	17/09/2025	Authentification du serveur	<Aucun>		CertSSLIdemia
+ADFS.eid.local	eid-CA-01-CA	17/09/2025	Authentification du serveur	<Aucun>		ADFS_IDEMIA
+S1T2IDPS01.eid.local	eid-CA-01-CA	05/10/2025	Authentification du serveur	<Aucun>		CertSSLIdemia
+S1T2IDPS02.eid.local	eid-CA-01-CA	05/10/2025	Authentification du serveur	<Aucun>		CertSSLIdemia
+jenkins.eid.local	eid-CA-01-CA	08/10/2025	Authentification du serveur	<Aucun>		CertSSLIdemia
+gitlab.eid.local	eid-CA-01-CA	09/10/2025	Authentification du serveur	<Aucun>		CertSSLIdemia
+jira-uat.eid.local	eid-CA-01-CA	09/10/2025	Authentification du serveur	<Aucun>		CertSSLIdemia
+confluence-uat.eid.local	eid-CA-01-CA	10/10/2025	Authentification du serveur	<Aucun>		CertSSLIdemia
+
