@@ -26,13 +26,13 @@ services:
   web:
     build: .
     container_name: certitrack_web
-    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8002 --workers 3
     volumes:
       - .:/app
       - static_volume:/app/staticfiles
       - media_volume:/app/media
     ports:
-      - "8000:8000"
+      - "8002:8002"
     environment:
       - SERVICE_NAME=web
       - DEBUG=False
@@ -44,7 +44,7 @@ services:
       - POSTGRES_PORT=5444
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - ALLOWED_HOSTS=localhost,127.0.0.1
+      - ALLOWED_HOSTS=localhost,127.0.0.1,172.16.41.24
     depends_on:
       - db
       - redis

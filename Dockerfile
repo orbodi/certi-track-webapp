@@ -35,7 +35,7 @@ RUN mkdir -p /app/static/css
 RUN python manage.py collectstatic --noinput || true
 
 # Exposer le port
-EXPOSE 8000
+EXPOSE 8002
 
 # Script de démarrage
 COPY docker-entrypoint.sh /app/
