@@ -28,6 +28,10 @@ db.sqlite3-journal
 media/
 staticfiles/
 
+# IMPORTANT: Ne PAS ignorer static/vendor/ !
+# Ces fichiers (Bootstrap local) doivent être versionnés pour fonctionner offline
+# static/vendor/ est tracké par Git
+
 # Environment
 .env
 venv/
