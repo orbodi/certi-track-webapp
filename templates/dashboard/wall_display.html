@@ -276,7 +276,11 @@
                                     <div class="cert-name">{{ cert.common_name }}</div>
                                     {% if cert.environment %}
                                     <div class="cert-info">
-                                        <i class="bi bi-hdd"></i> {{ cert.get_environment_display }}
+                                        <i class="bi bi-hdd"></i> {{ cert.get_environment_display }} | Expire le {{ cert.valid_until|date:"d/m/Y" }}
+                                    </div>
+                                    {% else %}
+                                    <div class="cert-info">
+                                        Expire le {{ cert.valid_until|date:"d/m/Y" }}
                                     </div>
                                     {% endif %}
                                 </td>
@@ -324,7 +328,11 @@
                                     <div class="cert-name">{{ cert.common_name }}</div>
                                     {% if cert.environment %}
                                     <div class="cert-info">
-                                        <i class="bi bi-hdd"></i> {{ cert.get_environment_display }}
+                                        <i class="bi bi-hdd"></i> {{ cert.get_environment_display }} | Expire le {{ cert.valid_until|date:"d/m/Y" }}
+                                    </div>
+                                    {% else %}
+                                    <div class="cert-info">
+                                        Expire le {{ cert.valid_until|date:"d/m/Y" }}
                                     </div>
                                     {% endif %}
                                 </td>
@@ -345,7 +353,11 @@
                                     <div class="cert-name">{{ cert.common_name }}</div>
                                     {% if cert.environment %}
                                     <div class="cert-info">
-                                        <i class="bi bi-hdd"></i> {{ cert.get_environment_display }}
+                                        <i class="bi bi-hdd"></i> {{ cert.get_environment_display }} | Expire le {{ cert.valid_until|date:"d/m/Y" }}
+                                    </div>
+                                    {% else %}
+                                    <div class="cert-info">
+                                        Expire le {{ cert.valid_until|date:"d/m/Y" }}
                                     </div>
                                     {% endif %}
                                 </td>
@@ -387,12 +399,11 @@
                                     <div class="cert-name">{{ cert.common_name }}</div>
                                     {% if cert.environment %}
                                     <div class="cert-info">
-                                        <i class="bi bi-hdd"></i> {{ cert.get_environment_display }}
-                                        | Expiré le {{ cert.valid_until|date:"d/m/Y" }}
+                                        <i class="bi bi-hdd"></i> {{ cert.get_environment_display }} | Expire le {{ cert.valid_until|date:"d/m/Y" }}
                                     </div>
                                     {% else %}
                                     <div class="cert-info">
-                                        Expiré le {{ cert.valid_until|date:"d/m/Y" }}
+                                        Expire le {{ cert.valid_until|date:"d/m/Y" }}
                                     </div>
                                     {% endif %}
                                 </td>
