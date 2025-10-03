@@ -44,9 +44,10 @@ class WallDashboardView(TemplateView):
             context['column1_certs'] = all_certs_list[:max_per_column]
             context['column2_certs'] = all_certs_list[max_per_column:]
         
-        # Garder les anciennes variables pour compatibilité (stats, etc.)
+        # Catégoriser les certificats pour les 3 cartes
         context['critical_certs'] = [c for c in all_certs_list if c.days_remaining is not None and 0 <= c.days_remaining <= 7]
-        context['warning_certs'] = [c for c in all_certs_list if c.days_remaining is not None and c.days_remaining > 7]
+        context['warning_certs'] = [c for c in all_certs_list if c.days_remaining is not None and 7 < c.days_remaining <= 30]
+        context['active_certs'] = [c for c in all_certs_list if c.days_remaining is not None and c.days_remaining > 30]
         context['expired_certs'] = [c for c in all_certs_list if c.days_remaining is not None and c.days_remaining < 0]
         
         # Statistiques par environnement

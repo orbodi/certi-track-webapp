@@ -44,7 +44,7 @@ class Certificate(models.Model):
         help_text="Autorité de certification (ex: eid-CA-01-CA)"
     )
     
-    valid_until = models.DateTimeField(
+    valid_until = models.DateField(
         verbose_name="Date d'expiration",
         help_text="Date d'expiration du certificat"
     )
@@ -73,7 +73,7 @@ class Certificate(models.Model):
     )
     
     # === Informations Enrichies (scan domaine) ===
-    valid_from = models.DateTimeField(
+    valid_from = models.DateField(
         blank=True,
         null=True,
         verbose_name="Valide depuis"
@@ -242,7 +242,7 @@ class Certificate(models.Model):
         """Nombre de jours avant expiration"""
         if not self.valid_until:
             return None
-        delta = self.valid_until - timezone.now()
+        delta = self.valid_until - timezone.now().date()
         return delta.days
     
     @property
@@ -250,7 +250,7 @@ class Certificate(models.Model):
         """Le certificat est-il expiré?"""
         if not self.valid_until:
             return None
-        return timezone.now() > self.valid_until
+        return timezone.now().date() > self.valid_until
     
     @property
     def is_expiring_soon(self):
@@ -284,7 +284,7 @@ class Certificate(models.Model):
         """Override save pour mettre à jour automatiquement le statut et les jours restants"""
         if self.valid_until:
             # Calculer et stocker les jours restants
-            delta = self.valid_until - timezone.now()
+            delta = self.valid_until - timezone.now().date()
             self.days_remaining = delta.days
             
             # Auto-update status

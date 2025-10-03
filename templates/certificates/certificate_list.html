@@ -49,32 +49,59 @@
     </div>
 
     <!-- Alertes de filtres actifs -->
-    {% if request.GET.days or request.GET.issuer or request.GET.status or request.GET.environment or request.GET.search %}
+    {% if request.GET.days or request.GET.issuer or request.GET.status or request.GET.environment or request.GET.search or request.GET.expiration_period %}
     <div class="row mb-3">
         <div class="col-12">
-            <div class="alert alert-info d-flex justify-content-between align-items-center">
-                <div>
-                    <i class="bi bi-funnel"></i>
-                    <strong>Filtres actifs :</strong>
-                    {% if request.GET.days %}
-                        <span class="badge bg-primary">{{ request.GET.days }} jour(s) restant(s)</span>
-                    {% endif %}
-                    {% if request.GET.environment %}
-                        <span class="badge bg-info">Env: {{ request.GET.environment }}</span>
-                    {% endif %}
-                    {% if request.GET.issuer %}
-                        <span class="badge bg-secondary">Émetteur: {{ request.GET.issuer }}</span>
-                    {% endif %}
-                    {% if request.GET.status %}
-                        <span class="badge bg-warning">Statut: {{ request.GET.status }}</span>
-                    {% endif %}
-                    {% if request.GET.search %}
-                        <span class="badge bg-success">Recherche: {{ request.GET.search }}</span>
-                    {% endif %}
+            <div class="alert alert-info">
+                <div class="d-flex justify-content-between align-items-start flex-column flex-md-row">
+                    <div class="mb-2 mb-md-0">
+                        <i class="bi bi-funnel"></i>
+                        <strong>Filtres actifs :</strong>
+                        <div class="d-inline-block">
+                            {% if request.GET.days %}
+                                {% if request.GET.days == 'expired' %}
+                                    <span class="badge bg-danger">Expirés</span>
+                                {% elif request.GET.days == 'critical' %}
+                                    <span class="badge bg-danger">Critique (≤7j)</span>
+                                {% elif request.GET.days == 'warning' %}
+                                    <span class="badge bg-warning">Attention (8-30j)</span>
+                                {% elif request.GET.days == 'safe' %}
+                                    <span class="badge bg-success">Sûr (>30j)</span>
+                                {% else %}
+                                    <span class="badge bg-primary">{{ request.GET.days }} jour(s)</span>
+                                {% endif %}
+                            {% endif %}
+                            {% if request.GET.expiration_period %}
+                                {% if request.GET.expiration_period == 'today' %}
+                                    <span class="badge bg-danger">Expire aujourd'hui</span>
+                                {% elif request.GET.expiration_period == 'week' %}
+                                    <span class="badge bg-warning">Expire cette semaine</span>
+                                {% elif request.GET.expiration_period == 'month' %}
+                                    <span class="badge bg-info">Expire ce mois</span>
+                                {% elif request.GET.expiration_period == 'quarter' %}
+                                    <span class="badge bg-secondary">Expire ce trimestre</span>
+                                {% endif %}
+                            {% endif %}
+                            {% if request.GET.environment %}
+                                <span class="badge bg-info">Env: {{ request.GET.environment }}</span>
+                            {% endif %}
+                            {% if request.GET.issuer %}
+                                <span class="badge bg-secondary">Émetteur: {{ request.GET.issuer }}</span>
+                            {% endif %}
+                            {% if request.GET.status %}
+                                <span class="badge bg-warning">Statut: {{ request.GET.status }}</span>
+                            {% endif %}
+                            {% if request.GET.search %}
+                                <span class="badge bg-success">Recherche: {{ request.GET.search }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <a href="{% url 'certificates:list' %}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i> Réinitialiser
+                        </a>
+                    </div>
                 </div>
-                <a href="{% url 'certificates:list' %}" class="btn btn-sm btn-outline-secondary">
-                    <i class="bi bi-x-circle"></i> Réinitialiser les filtres
-                </a>
             </div>
         </div>
     </div>
@@ -84,31 +111,51 @@
     <div class="card mb-4">
         <div class="card-body">
             <form method="get" class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label">Recherche</label>
-                    <input type="text" name="search" class="form-control" placeholder="Nom, émetteur, template..." value="{{ current_search }}">
-                </div>
                 <div class="col-md-3">
+                    <label class="form-label">Recherche</label>
+                    <input type="text" name="search" class="form-control" placeholder="Nom, émetteur, template..." value="{{ request.GET.search }}">
+                </div>
+                <div class="col-md-2">
                     <label class="form-label">Statut</label>
                     <select name="status" class="form-select">
                         <option value="">Tous</option>
-                        <option value="active" {% if current_status == 'active' %}selected{% endif %}>Actif</option>
-                        <option value="expiring_soon" {% if current_status == 'expiring_soon' %}selected{% endif %}>Expire Bientôt</option>
-                        <option value="expired" {% if current_status == 'expired' %}selected{% endif %}>Expiré</option>
+                        <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Actif</option>
+                        <option value="expiring_soon" {% if request.GET.status == 'expiring_soon' %}selected{% endif %}>Expire Bientôt</option>
+                        <option value="expired" {% if request.GET.status == 'expired' %}selected{% endif %}>Expiré</option>
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">Environnement</label>
                     <select name="environment" class="form-select">
                         <option value="">Tous</option>
-                        <option value="prod" {% if current_environment == 'prod' %}selected{% endif %}>Production</option>
-                        <option value="uat" {% if current_environment == 'uat' %}selected{% endif %}>UAT</option>
-                        <option value="test" {% if current_environment == 'test' %}selected{% endif %}>Test</option>
-                        <option value="dev" {% if current_environment == 'dev' %}selected{% endif %}>Développement</option>
+                        <option value="prod" {% if request.GET.environment == 'prod' %}selected{% endif %}>Production</option>
+                        <option value="uat" {% if request.GET.environment == 'uat' %}selected{% endif %}>UAT</option>
+                        <option value="test" {% if request.GET.environment == 'test' %}selected{% endif %}>Test</option>
+                        <option value="dev" {% if request.GET.environment == 'dev' %}selected{% endif %}>Développement</option>
                     </select>
                 </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary me-2"><i class="bi bi-search"></i> Filtrer</button>
+                <div class="col-md-2">
+                    <label class="form-label">Jours restants</label>
+                    <select name="days" class="form-select">
+                        <option value="">Tous</option>
+                        <option value="expired" {% if request.GET.days == 'expired' %}selected{% endif %}>Expirés</option>
+                        <option value="critical" {% if request.GET.days == 'critical' %}selected{% endif %}>Critique (≤7j)</option>
+                        <option value="warning" {% if request.GET.days == 'warning' %}selected{% endif %}>Attention (8-30j)</option>
+                        <option value="safe" {% if request.GET.days == 'safe' %}selected{% endif %}>Sûr (>30j)</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Période expiration</label>
+                    <select name="expiration_period" class="form-select">
+                        <option value="">Toutes</option>
+                        <option value="today" {% if request.GET.expiration_period == 'today' %}selected{% endif %}>Aujourd'hui</option>
+                        <option value="week" {% if request.GET.expiration_period == 'week' %}selected{% endif %}>Cette semaine</option>
+                        <option value="month" {% if request.GET.expiration_period == 'month' %}selected{% endif %}>Ce mois</option>
+                        <option value="quarter" {% if request.GET.expiration_period == 'quarter' %}selected{% endif %}>Ce trimestre</option>
+                    </select>
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2"><i class="bi bi-search"></i></button>
                     <a href="{% url 'certificates:list' %}" class="btn btn-outline-secondary"><i class="bi bi-x"></i></a>
                 </div>
             </form>
@@ -119,9 +166,26 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Liste des certificats</h5>
-            <a href="{% url 'certificates:import_choice' %}" class="btn btn-success btn-sm">
-                <i class="bi bi-plus-circle"></i> Ajouter
-            </a>
+            <div class="d-flex align-items-center gap-3">
+                <!-- Sélecteur d'éléments par page -->
+                <form method="get" class="d-flex align-items-center">
+                    {% for key, value in request.GET.items %}
+                        {% if key != 'per_page' and key != 'page' %}
+                            <input type="hidden" name="{{ key }}" value="{{ value }}">
+                        {% endif %}
+                    {% endfor %}
+                    <label class="form-label me-2 mb-0" style="font-size: 0.9rem;">Par page:</label>
+                    <select name="per_page" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
+                        <option value="10" {% if request.GET.per_page == '10' %}selected{% endif %}>10</option>
+                        <option value="20" {% if request.GET.per_page == '20' or not request.GET.per_page %}selected{% endif %}>20</option>
+                        <option value="50" {% if request.GET.per_page == '50' %}selected{% endif %}>50</option>
+                        <option value="100" {% if request.GET.per_page == '100' %}selected{% endif %}>100</option>
+                    </select>
+                </form>
+                <a href="{% url 'certificates:import_choice' %}" class="btn btn-success btn-sm">
+                    <i class="bi bi-plus-circle"></i> Ajouter
+                </a>
+            </div>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">

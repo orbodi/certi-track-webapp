@@ -17,6 +17,10 @@ class CertificateListView(LoginRequiredMixin, ListView):
     context_object_name = 'certificates'
     paginate_by = 20
     
+    def get_paginate_by(self, queryset):
+        """Gérer le nombre d'éléments par page"""
+        return self.request.GET.get('per_page', self.paginate_by)
+    
     def get_queryset(self):
         queryset = Certificate.objects.all()
         
@@ -39,10 +43,48 @@ class CertificateListView(LoginRequiredMixin, ListView):
         days = self.request.GET.get('days')
         if days:
             try:
-                days_int = int(days)
-                queryset = queryset.filter(days_remaining=days_int)
+                if days == 'expired':
+                    queryset = queryset.filter(days_remaining__lt=0)
+                elif days == 'critical':
+                    queryset = queryset.filter(days_remaining__gte=0, days_remaining__lte=7)
+                elif days == 'warning':
+                    queryset = queryset.filter(days_remaining__gt=7, days_remaining__lte=30)
+                elif days == 'safe':
+                    queryset = queryset.filter(days_remaining__gt=30)
+                else:
+                    days_int = int(days)
+                    queryset = queryset.filter(days_remaining=days_int)
             except ValueError:
                 pass
+        
+        # Filtre par date d'expiration
+        expiration_date = self.request.GET.get('expiration_date')
+        if expiration_date:
+            try:
+                from datetime import datetime
+                date_obj = datetime.strptime(expiration_date, '%Y-%m-%d').date()
+                queryset = queryset.filter(valid_until=date_obj)
+            except ValueError:
+                pass
+        
+        # Filtre par période d'expiration
+        expiration_period = self.request.GET.get('expiration_period')
+        if expiration_period:
+            today = timezone.now().date()
+            if expiration_period == 'today':
+                queryset = queryset.filter(valid_until=today)
+            elif expiration_period == 'week':
+                from datetime import timedelta
+                week_end = today + timedelta(days=7)
+                queryset = queryset.filter(valid_until__range=[today, week_end])
+            elif expiration_period == 'month':
+                from datetime import timedelta
+                month_end = today + timedelta(days=30)
+                queryset = queryset.filter(valid_until__range=[today, month_end])
+            elif expiration_period == 'quarter':
+                from datetime import timedelta
+                quarter_end = today + timedelta(days=90)
+                queryset = queryset.filter(valid_until__range=[today, quarter_end])
         
         # Recherche générale
         search = self.request.GET.get('search')
@@ -116,12 +158,12 @@ class CSVImportView(LoginRequiredMixin, FormView):
                     continue
                 
                 try:
-                    # Reconvertir la date ISO string en datetime timezone-aware
+                    # Reconvertir la date ISO string en date (pas datetime)
                     valid_until = cert_data.get('valid_until')
                     if valid_until and isinstance(valid_until, str):
                         naive_dt = datetime.fromisoformat(valid_until)
-                        # Rendre la date timezone-aware (UTC)
-                        valid_until = django_timezone.make_aware(naive_dt, django_timezone.utc)
+                        # Convertir en date seulement (pas datetime)
+                        valid_until = naive_dt.date()
                     
                     defaults = {
                         'issuer': cert_data.get('issuer', ''),
@@ -135,10 +177,13 @@ class CSVImportView(LoginRequiredMixin, FormView):
                         'created_by': self.request.user if self.request.user.is_authenticated else None,
                     }
                     
-                    cert, created = Certificate.objects.update_or_create(
-                        common_name=cert_data['common_name'], 
-                        defaults=defaults
+                    # Créer un nouveau certificat sans vérifier les doublons
+                    # Permet d'avoir plusieurs certificats avec le même nom mais des dates différentes
+                    cert = Certificate.objects.create(
+                        common_name=cert_data['common_name'],
+                        **defaults
                     )
+                    created = True
                     
                     if created:
                         created_count += 1

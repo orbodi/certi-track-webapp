@@ -336,6 +336,7 @@
 .pagination .page-item.active .page-link {
     background-color: var(--atos-blue);
     border-color: var(--atos-blue);
+    color: white !important;
 }
 
 .pagination .page-link:hover {

@@ -213,6 +213,101 @@
             font-weight: 600;
             margin-left: 10px;
         }
+        
+        /* Animation pour les chiffres */
+        .animated-number {
+            animation: countUp 1.5s ease-out;
+        }
+        
+        @keyframes countUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Animation de pulsation pour les icônes */
+        .pulse-icon {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        
+        /* Animation de rotation pour l'icône d'alerte */
+        .rotate-icon {
+            animation: rotate 3s linear infinite;
+        }
+        
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        
+        /* Animation de clignotement pour les certificats critiques */
+        .blink-critical {
+            animation: blinkCritical 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes blinkCritical {
+            0%, 50% {
+                background-color: rgba(231, 111, 81, 0.1);
+                border-left: 4px solid #E76F51;
+            }
+            25%, 75% {
+                background-color: rgba(231, 111, 81, 0.3);
+                border-left: 4px solid #FF6B6B;
+            }
+        }
+        
+        /* Animation de clignotement pour les certificats expirés */
+        .blink-expired {
+            animation: blinkExpired 2s ease-in-out infinite;
+        }
+        
+        @keyframes blinkExpired {
+            0%, 50% {
+                background-color: rgba(220, 53, 69, 0.1);
+                border-left: 4px solid #DC3545;
+            }
+            25%, 75% {
+                background-color: rgba(220, 53, 69, 0.4);
+                border-left: 4px solid #FF0000;
+            }
+        }
+        
+        /* Animation de clignotement pour les badges */
+        .badge-blink {
+            animation: badgeBlink 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes badgeBlink {
+            0%, 50% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            25%, 75% {
+                opacity: 0.6;
+                transform: scale(1.05);
+            }
+        }
     </style>
 </head>
 <body>
@@ -226,24 +321,30 @@
                 <div class="d-flex gap-4 align-items-center">
                     <!-- Total -->
                     <div style="text-align: center;">
-                        <div style="font-size: 1.8rem; font-weight: 700; line-height: 1;">{{ stats.total }}</div>
-                        <div style="font-size: 0.7rem; opacity: 0.8;">Total</div>
+                        <div style="font-size: 1.8rem; font-weight: 700; line-height: 1;" class="animated-number">{{ stats.total }}</div>
+                        <div style="font-size: 0.7rem; opacity: 0.8;">
+                            <i class="bi bi-shield-check pulse-icon" style="margin-right: 5px;"></i>Total
+                        </div>
                     </div>
                     
                     <div style="border-left: 2px solid rgba(255, 255, 255, 0.3); height: 35px;"></div>
                     
                     <!-- Expire Bientôt -->
                     <div style="text-align: center;">
-                        <div style="font-size: 1.8rem; font-weight: 700; line-height: 1; color: #FFD700;">{{ stats.expiring_soon }}</div>
-                        <div style="font-size: 0.7rem; opacity: 0.8;">⚠️ Expire Bientôt</div>
+                        <div style="font-size: 1.8rem; font-weight: 700; line-height: 1; color: #FFD700;" class="animated-number">{{ stats.expiring_soon }}</div>
+                        <div style="font-size: 0.7rem; opacity: 0.8;">
+                            <i class="bi bi-exclamation-triangle-fill rotate-icon" style="margin-right: 5px; color: #FFD700;"></i>Expire Bientôt
+                        </div>
                     </div>
                     
                     <div style="border-left: 2px solid rgba(255, 255, 255, 0.3); height: 35px;"></div>
                     
                     <!-- Expirés -->
                     <div style="text-align: center;">
-                        <div style="font-size: 1.8rem; font-weight: 700; line-height: 1; color: #FF6B6B;">{{ stats.expired }}</div>
-                        <div style="font-size: 0.7rem; opacity: 0.8;">❌ Expirés</div>
+                        <div style="font-size: 1.8rem; font-weight: 700; line-height: 1; color: #FF6B6B;" class="animated-number">{{ stats.expired }}</div>
+                        <div style="font-size: 0.7rem; opacity: 0.8;">
+                            <i class="bi bi-x-circle-fill pulse-icon" style="margin-right: 5px; color: #FF6B6B;"></i>Expirés
+                        </div>
                     </div>
                 </div>
             </div>
@@ -258,8 +359,6 @@
                     <span class="count-badge">{{ stats.active }}</span>
                 </div>
                 <div class="table-wrapper">
-                    {% if critical_certs or warning_certs %}
-                    {% with active_certs=warning_certs|slice:":100" %}
                     {% if active_certs %}
                     <table class="table mb-0">
                         <thead>
@@ -270,7 +369,6 @@
                         </thead>
                         <tbody>
                             {% for cert in active_certs %}
-                            {% if cert.days_remaining > 30 %}
                             <tr>
                                 <td>
                                     <div class="cert-name">{{ cert.common_name }}</div>
@@ -288,19 +386,12 @@
                                     <span class="days-badge badge-green">{{ cert.days_remaining }}j</span>
                                 </td>
                             </tr>
-                            {% endif %}
                             {% endfor %}
                         </tbody>
                     </table>
                     {% else %}
                     <div class="empty-state">
-                        <i class="bi bi-inbox"></i><br>Aucun
-                    </div>
-                    {% endif %}
-                    {% endwith %}
-                    {% else %}
-                    <div class="empty-state">
-                        <i class="bi bi-inbox"></i><br>Aucun certificat actif
+                        <i class="bi bi-check-circle"></i><br>Aucun certificat actif
                     </div>
                     {% endif %}
                 </div>
@@ -323,7 +414,7 @@
                         </thead>
                         <tbody>
                             {% for cert in critical_certs %}
-                            <tr>
+                            <tr class="blink-critical">
                                 <td>
                                     <div class="cert-name">{{ cert.common_name }}</div>
                                     {% if cert.environment %}
@@ -338,9 +429,9 @@
                                 </td>
                                 <td class="text-center">
                                     {% if cert.days_remaining <= 7 %}
-                                    <span class="days-badge badge-red">{{ cert.days_remaining }}j</span>
+                                    <span class="days-badge badge-red badge-blink">{{ cert.days_remaining }}j</span>
                                     {% else %}
-                                    <span class="days-badge badge-orange">{{ cert.days_remaining }}j</span>
+                                    <span class="days-badge badge-orange badge-blink">{{ cert.days_remaining }}j</span>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -348,7 +439,7 @@
                             
                             {% for cert in warning_certs %}
                             {% if cert.days_remaining <= 30 %}
-                            <tr>
+                            <tr class="blink-critical">
                                 <td>
                                     <div class="cert-name">{{ cert.common_name }}</div>
                                     {% if cert.environment %}
@@ -362,7 +453,7 @@
                                     {% endif %}
                                 </td>
                                 <td class="text-center">
-                                    <span class="days-badge badge-orange">{{ cert.days_remaining }}j</span>
+                                    <span class="days-badge badge-orange badge-blink">{{ cert.days_remaining }}j</span>
                                 </td>
                             </tr>
                             {% endif %}
@@ -394,7 +485,7 @@
                         </thead>
                         <tbody>
                             {% for cert in expired_certs %}
-                            <tr>
+                            <tr class="blink-expired">
                                 <td>
                                     <div class="cert-name">{{ cert.common_name }}</div>
                                     {% if cert.environment %}
@@ -408,7 +499,7 @@
                                     {% endif %}
                                 </td>
                                 <td class="text-center">
-                                    <span class="days-badge badge-expired">EXP</span>
+                                    <span class="days-badge badge-expired badge-blink">EXP</span>
                                 </td>
                             </tr>
                             {% endfor %}
