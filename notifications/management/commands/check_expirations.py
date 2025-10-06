@@ -3,7 +3,7 @@ Commande pour vérifier les certificats expirant et envoyer des alertes groupée
 Usage: python manage.py check_expirations [--dry-run] [--force]
 """
 from django.core.management.base import BaseCommand
-from django.core.mail import EmailMultiAlternatives
+from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.conf import settings
@@ -63,9 +63,11 @@ class Command(BaseCommand):
             self.stdout.write(f'\n📋 Règle: {rule.name} ({rule.days_before_expiration} jours)')
             
             # Utiliser le champ days_remaining en base de données pour des requêtes performantes
+            # Inclure tous les certificats qui expirent dans X jours OU MOINS
             certificates = Certificate.objects.filter(
                 status__in=['active', 'expiring_soon'],
-                days_remaining=rule.days_before_expiration
+                days_remaining__lte=rule.days_before_expiration,
+                days_remaining__gte=0  # Exclure les certificats déjà expirés
             )
             
             # Appliquer les filtres de la règle
@@ -150,10 +152,6 @@ class Command(BaseCommand):
                 from notifications.email_backend import get_connection
                 connection = get_connection()
                 
-                # Rendu des templates (email groupé)
-                html_content = render_to_string('emails/certificates_batch_expiring.html', context)
-                text_content = render_to_string('emails/certificates_batch_expiring.txt', context)
-                
                 # Créer l'email
                 from_email = f'{email_settings.from_name} <{email_settings.from_email}>'
                 
@@ -163,14 +161,34 @@ class Command(BaseCommand):
                 else:
                     subject = f"{rule.email_subject} - {certificates.count()} certificats"
                 
-                email = EmailMultiAlternatives(
+                # Créer le contenu email directement avec formatage forcé
+                cert_list = ""
+                for cert in certificates:
+                    cert_list += f"- {cert.common_name} (Expire le {cert.valid_until.strftime('%d/%m/%Y')})\n"
+                
+                body_content = f"""Bonjour,
+
+Voici la liste des certificats arrivant à échéance dans les prochains jours :
+
+{cert_list}
+Action requise : renouveler ces certificats afin d'éviter toute interruption de service.
+
+Message automatique – merci de ne pas répondre.
+
+Cordialement,
+CertiTrack"""
+                
+                # Envoyer seulement du texte simple avec encodage UTF-8 explicite
+                email = EmailMessage(
                     subject=subject,
-                    body=text_content,
+                    body=body_content,
                     from_email=from_email,
                     to=recipients,
                     connection=connection
                 )
-                email.attach_alternative(html_content, "text/html")
+                # Forcer l'encodage UTF-8 et le type de contenu
+                email.encoding = 'utf-8'
+                email.content_subtype = 'plain'
                 
                 # Envoyer
                 email.send(fail_silently=False)

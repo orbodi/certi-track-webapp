@@ -3,7 +3,7 @@ Tâches Celery pour les notifications
 """
 from celery import shared_task
 from django.core.management import call_command
-from django.core.mail import EmailMultiAlternatives
+from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.conf import settings
@@ -38,6 +38,232 @@ def send_daily_summary_task():
         return 'Résumé quotidien envoyé avec succès'
     except Exception as e:
         return f'Erreur lors de l\'envoi du résumé: {str(e)}'
+
+
+@shared_task(name='notifications.tasks.monthly_alert_30_days')
+def monthly_alert_30_days():
+    """
+    Tâche Celery pour l'alerte mensuelle des certificats expirant dans 30 jours ou moins
+    Exécutée le 1er de chaque mois
+    """
+    from django.core.mail import EmailMessage
+    from .email_backend import get_connection
+    from certificates.models import Certificate
+    from .models import EmailSettings
+    from django.utils import timezone
+    
+    try:
+        email_settings = EmailSettings.get_settings()
+        
+        # Récupérer tous les certificats expirant dans 30 jours ou moins
+        certificates = Certificate.objects.filter(
+            status__in=['active', 'expiring_soon'],
+            days_remaining__lte=30,
+            days_remaining__gte=0
+        ).order_by('days_remaining')
+        
+        if not certificates.exists():
+            return 'Aucun certificat à notifier pour l\'alerte 30 jours'
+        
+        # Préparer les destinataires
+        recipients = email_settings.default_recipients.split('\n')
+        recipients = [email.strip() for email in recipients if email.strip()]
+        
+        if not recipients:
+            return 'Aucun destinataire configuré'
+        
+        # Créer le contenu email
+        cert_list = ""
+        for cert in certificates:
+            cert_list += f"- {cert.common_name} (Expire le {cert.valid_until.strftime('%d/%m/%Y')})\n"
+        
+        body_content = f"""Bonjour,
+
+Voici la liste des certificats arrivant à échéance dans les 30 prochains jours :
+
+{cert_list}
+Action requise : renouveler ces certificats afin d'éviter toute interruption de service.
+
+Message automatique – merci de ne pas répondre.
+
+Cordialement,
+CertiTrack"""
+        
+        # Envoyer l'email
+        connection = get_connection()
+        email = EmailMessage(
+            subject='Alerte Mensuelle - Certificats expirant dans 30 jours',
+            body=body_content,
+            from_email=f'{email_settings.from_name} <{email_settings.from_email}>',
+            to=recipients,
+            connection=connection
+        )
+        email.encoding = 'utf-8'
+        email.content_subtype = 'plain'
+        email.send(fail_silently=False)
+        
+        return f'Alerte mensuelle 30 jours envoyée pour {certificates.count()} certificat(s)'
+        
+    except Exception as e:
+        return f'Erreur lors de l\'envoi de l\'alerte mensuelle 30 jours: {str(e)}'
+
+
+@shared_task(name='notifications.tasks.monthly_alert_7_days')
+def monthly_alert_7_days():
+    """
+    Tâche Celery pour l'alerte mensuelle des certificats expirant dans 7 jours ou moins
+    Exécutée 7 jours avant la fin du mois
+    """
+    from django.core.mail import EmailMessage
+    from .email_backend import get_connection
+    from certificates.models import Certificate
+    from .models import EmailSettings
+    from django.utils import timezone
+    
+    try:
+        email_settings = EmailSettings.get_settings()
+        
+        # Récupérer tous les certificats expirant dans 7 jours ou moins
+        certificates = Certificate.objects.filter(
+            status__in=['active', 'expiring_soon'],
+            days_remaining__lte=7,
+            days_remaining__gte=0
+        ).order_by('days_remaining')
+        
+        if not certificates.exists():
+            return 'Aucun certificat à notifier pour l\'alerte 7 jours'
+        
+        # Préparer les destinataires
+        recipients = email_settings.default_recipients.split('\n')
+        recipients = [email.strip() for email in recipients if email.strip()]
+        
+        if not recipients:
+            return 'Aucun destinataire configuré'
+        
+        # Créer le contenu email
+        cert_list = ""
+        for cert in certificates:
+            cert_list += f"- {cert.common_name} (Expire le {cert.valid_until.strftime('%d/%m/%Y')})\n"
+        
+        body_content = f"""Bonjour,
+
+Voici la liste des certificats arrivant à échéance dans les 7 prochains jours :
+
+{cert_list}
+Action requise : renouveler ces certificats afin d'éviter toute interruption de service.
+
+Message automatique – merci de ne pas répondre.
+
+Cordialement,
+CertiTrack"""
+        
+        # Envoyer l'email
+        connection = get_connection()
+        email = EmailMessage(
+            subject='Alerte Mensuelle - Certificats expirant dans 7 jours',
+            body=body_content,
+            from_email=f'{email_settings.from_name} <{email_settings.from_email}>',
+            to=recipients,
+            connection=connection
+        )
+        email.encoding = 'utf-8'
+        email.content_subtype = 'plain'
+        email.send(fail_silently=False)
+        
+        return f'Alerte mensuelle 7 jours envoyée pour {certificates.count()} certificat(s)'
+        
+    except Exception as e:
+        return f'Erreur lors de l\'envoi de l\'alerte mensuelle 7 jours: {str(e)}'
+
+
+@shared_task(name='notifications.tasks.send_rule_alert')
+def send_rule_alert(rule_id):
+    """
+    Tâche Celery pour envoyer une alerte selon une règle de notification
+    """
+    try:
+        rule = NotificationRule.objects.get(id=rule_id)
+        email_settings = EmailSettings.get_settings()
+        
+        # Récupérer les certificats selon la règle
+        certificates = Certificate.objects.filter(
+            status__in=['active', 'expiring_soon'],
+            days_remaining__lte=rule.days_before_expiration,
+            days_remaining__gte=0
+        )
+        
+        # Appliquer les filtres de la règle
+        if rule.filter_by_environment:
+            certificates = certificates.filter(environment=rule.filter_by_environment)
+        
+        if rule.filter_by_issuer:
+            certificates = certificates.filter(issuer__icontains=rule.filter_by_issuer)
+        
+        if not certificates.exists():
+            return f'Aucun certificat trouvé pour la règle {rule.name}'
+        
+        # Préparer les destinataires
+        recipients = rule.get_recipients_list()
+        if not recipients:
+            recipients = email_settings.default_recipients.split('\n')
+            recipients = [email.strip() for email in recipients if email.strip()]
+        
+        if not recipients:
+            return 'Aucun destinataire configuré'
+        
+        # Créer le contenu email
+        cert_list = ""
+        for cert in certificates:
+            cert_list += f"- {cert.common_name} (Expire le {cert.valid_until.strftime('%d/%m/%Y')})\n"
+        
+        body_content = f"""Bonjour,
+
+Voici la liste des certificats arrivant à échéance dans les {rule.days_before_expiration} prochains jours :
+
+{cert_list}
+Action requise : renouveler ces certificats afin d'éviter toute interruption de service.
+
+Message automatique – merci de ne pas répondre.
+
+Cordialement,
+CertiTrack"""
+        
+        # Envoyer l'email
+        connection = get_connection()
+        email = EmailMessage(
+            subject=rule.email_subject,
+            body=body_content,
+            from_email=f'{email_settings.from_name} <{email_settings.from_email}>',
+            to=recipients,
+            connection=connection
+        )
+        email.encoding = 'utf-8'
+        email.content_subtype = 'plain'
+        email.send(fail_silently=False)
+        
+        # Logger le succès pour chaque certificat
+        for cert in certificates:
+            NotificationLog.objects.create(
+                certificate=cert,
+                rule=rule,
+                status='sent',
+                message=f'Alerte groupée envoyée pour {certificates.count()} certificat(s)'
+            )
+        
+        return f'Alerte de la règle {rule.name} envoyée pour {certificates.count()} certificat(s)'
+        
+    except Exception as e:
+        # Logger l'erreur
+        try:
+            NotificationLog.objects.create(
+                rule=rule,
+                status='error',
+                message=str(e)
+            )
+        except:
+            pass
+        
+        return f'Erreur lors de l\'envoi de la règle {rule_id}: {str(e)}'
 
 
 @shared_task(name='notifications.tasks.send_certificate_alert')
@@ -83,21 +309,37 @@ def send_certificate_alert(certificate_id, rule_id):
         from .email_backend import get_connection
         connection = get_connection()
         
-        # Rendu des templates
-        html_content = render_to_string('emails/certificate_expiring.html', context)
-        text_content = render_to_string('emails/certificate_expiring.txt', context)
-        
-        # Créer et envoyer l'email
+        # Créer le contenu email directement avec formatage forcé
         from_email = f'{email_settings.from_name} <{email_settings.from_email}>'
         
-        email = EmailMultiAlternatives(
+        # Contenu email avec nouveau format et dates en gras
+        body_content = f"""Objet : Alerte – Certificats en expiration
+
+Bonjour,
+
+Voici la liste des certificats arrivant à échéance dans les prochains jours :
+
+Certificat	Date d'expiration
+{certificate.common_name}	**{certificate.valid_until.strftime('%d/%m/%Y')}**
+
+Action requise : renouveler ces certificats afin d'éviter toute interruption de service.
+
+Message automatique – merci de ne pas répondre.
+
+Cordialement,
+CertiTrack"""
+        
+        # Envoyer seulement du texte simple avec encodage UTF-8 explicite
+        email = EmailMessage(
             subject=rule.email_subject,
-            body=text_content,
+            body=body_content,
             from_email=from_email,
             to=recipients,
             connection=connection
         )
-        email.attach_alternative(html_content, "text/html")
+        # Forcer l'encodage UTF-8 et le type de contenu
+        email.encoding = 'utf-8'
+        email.content_subtype = 'plain'
         email.send(fail_silently=False)
         
         # Logger le succès

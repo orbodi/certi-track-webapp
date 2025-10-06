@@ -22,7 +22,8 @@ class CertificateListView(LoginRequiredMixin, ListView):
         return self.request.GET.get('per_page', self.paginate_by)
     
     def get_queryset(self):
-        queryset = Certificate.objects.all()
+        # Exclure les certificats archivés par défaut
+        queryset = Certificate.objects.filter(archived=False)
         
         # Filtre par statut
         status = self.request.GET.get('status')
@@ -137,99 +138,166 @@ class CSVImportView(LoginRequiredMixin, FormView):
         return super().post(request, *args, **kwargs)
     
     def handle_confirmation(self):
-        """Gérer la confirmation de l'import depuis la session"""
+        """Gérer la confirmation de l'import depuis la session avec gestion intelligente"""
         from datetime import datetime
         from django.utils import timezone as django_timezone
         from django.db import transaction
         
-        certificates_data = self.request.session.get('csv_import_data', [])
+        analysis_results = self.request.session.get('csv_analysis_results', [])
         
-        if not certificates_data:
+        if not analysis_results:
             messages.error(self.request, 'Aucune donnée à importer. Veuillez recommencer l\'upload.')
             return redirect('certificates:import_csv')
         
-        created_count, updated_count, error_count = 0, 0, 0
+        created_count, updated_count, ignored_count, archived_count, error_count = 0, 0, 0, 0, 0
         
-        # Utiliser une transaction atomique pour éviter les problèmes de lock SQLite
+        # Utiliser une transaction atomique
         with transaction.atomic():
-            for cert_data in certificates_data:
-                if 'error' in cert_data:
+            for result in analysis_results:
+                action = result.get('action')
+                csv_data = result.get('csv_data', {})
+                existing_cert = result.get('existing_cert')
+                
+                # Ignorer les erreurs et doublons
+                if action == 'error':
                     error_count += 1
                     continue
                 
+                if action == 'duplicate':
+                    ignored_count += 1
+                    continue
+                
                 try:
-                    # Reconvertir la date ISO string en date (pas datetime)
-                    valid_until = cert_data.get('valid_until')
+                    # Reconvertir la date ISO string en date
+                    valid_until = csv_data.get('valid_until')
                     if valid_until and isinstance(valid_until, str):
                         naive_dt = datetime.fromisoformat(valid_until)
-                        # Convertir en date seulement (pas datetime)
                         valid_until = naive_dt.date()
                     
-                    defaults = {
-                        'issuer': cert_data.get('issuer', ''),
+                    # Préparer les données du certificat
+                    cert_defaults = {
+                        'issuer': csv_data.get('issuer', ''),
                         'valid_until': valid_until,
-                        'key_usage': cert_data.get('key_usage'),
-                        'friendly_name': cert_data.get('friendly_name'),
-                        'template_name': cert_data.get('template_name'),
-                        'environment': cert_data.get('environment'),
+                        'key_usage': csv_data.get('key_usage'),
+                        'friendly_name': csv_data.get('friendly_name'),
+                        'template_name': csv_data.get('template_name'),
+                        'environment': csv_data.get('environment'),
                         'import_method': 'csv',
                         'needs_enrichment': self.request.session.get('csv_auto_enrich', False),
                         'created_by': self.request.user if self.request.user.is_authenticated else None,
                     }
                     
-                    # Créer un nouveau certificat sans vérifier les doublons
-                    # Permet d'avoir plusieurs certificats avec le même nom mais des dates différentes
-                    cert = Certificate.objects.create(
-                        common_name=cert_data['common_name'],
-                        **defaults
-                    )
-                    created = True
-                    
-                    if created:
+                    # Action: NOUVEAU - créer directement
+                    if action == 'new':
+                        Certificate.objects.create(
+                            common_name=csv_data['common_name'],
+                            **cert_defaults
+                        )
                         created_count += 1
-                    else:
+                    
+                    # Action: MISE À JOUR - archiver l'ancien, créer le nouveau
+                    elif action == 'update':
+                        if existing_cert and existing_cert.get('id'):
+                            # Archiver l'ancien certificat
+                            old_cert = Certificate.objects.get(id=existing_cert['id'])
+                            old_cert.archived = True
+                            old_cert.archived_at = django_timezone.now()
+                            old_cert.archived_reason = f"Remplacé par certificat plus récent (exp: {valid_until.strftime('%d/%m/%Y')})"
+                            old_cert.save()
+                            archived_count += 1
+                        
+                        # Créer le nouveau certificat
+                        Certificate.objects.create(
+                            common_name=csv_data['common_name'],
+                            **cert_defaults
+                        )
                         updated_count += 1
+                    
+                    # Action: CONFLIT - pour l'instant, ignorer (peut être amélioré)
+                    elif action == 'conflict':
+                        # Option future: laisser l'utilisateur décider
+                        # Pour l'instant, on ignore les versions antérieures
+                        ignored_count += 1
                         
                 except Exception as e:
                     error_count += 1
-                    print(f"Erreur import CSV - {cert_data.get('common_name', 'Unknown')}: {str(e)}")
+                    print(f"Erreur import CSV - {csv_data.get('common_name', 'Unknown')}: {str(e)}")
         
         # Nettoyer la session
-        if 'csv_import_data' in self.request.session:
-            del self.request.session['csv_import_data']
-        if 'csv_auto_enrich' in self.request.session:
-            del self.request.session['csv_auto_enrich']
+        for key in ['csv_analysis_results', 'csv_analysis_summary', 'csv_auto_enrich']:
+            if key in self.request.session:
+                del self.request.session[key]
         
         # Messages selon le résultat
-        if error_count == len(certificates_data):
-            messages.error(self.request, f'❌ Import échoué: {error_count} erreurs. Consultez les logs.')
-        elif error_count > 0:
-            messages.warning(self.request, f'⚠️ Import partiel: {created_count} créés, {updated_count} màj, {error_count} erreurs')
+        message_parts = []
+        if created_count > 0:
+            message_parts.append(f"{created_count} nouveau(x)")
+        if updated_count > 0:
+            message_parts.append(f"{updated_count} mis à jour")
+        if archived_count > 0:
+            message_parts.append(f"{archived_count} archivé(s)")
+        if ignored_count > 0:
+            message_parts.append(f"{ignored_count} ignoré(s)")
+        if error_count > 0:
+            message_parts.append(f"{error_count} erreur(s)")
+        
+        if error_count > 0 and created_count == 0 and updated_count == 0:
+            messages.error(self.request, f'❌ Import échoué: {", ".join(message_parts)}')
+        elif error_count > 0 or ignored_count > 0:
+            messages.warning(self.request, f'⚠️ Import partiel: {", ".join(message_parts)}')
         else:
-            messages.success(self.request, f'✅ Import réussi: {created_count} certificat(s) créé(s), {updated_count} mis à jour')
+            messages.success(self.request, f'✅ Import réussi: {", ".join(message_parts)}')
         
         return redirect(self.success_url)
     
     def form_valid(self, form):
         # Gérer uniquement le preview ici
+        from .csv_analyzer import CSVAnalyzer
+        
         certificates_data = form.parse_csv()
         
+        # Analyser les certificats avec détection intelligente
+        analyzer = CSVAnalyzer()
+        analysis_result = analyzer.analyze_batch(certificates_data)
+        
         # Convertir les dates en chaînes pour la sérialisation JSON
-        serializable_data = []
-        for cert_data in certificates_data:
-            serializable_cert = cert_data.copy()
-            # Convertir datetime en ISO string
-            if 'valid_until' in serializable_cert and serializable_cert['valid_until']:
-                serializable_cert['valid_until'] = serializable_cert['valid_until'].isoformat()
-            serializable_data.append(serializable_cert)
+        serializable_results = []
+        for result in analysis_result['results']:
+            serializable_result = result.copy()
+            
+            # Convertir les dates du CSV
+            if 'csv_data' in serializable_result and serializable_result['csv_data']:
+                csv_copy = serializable_result['csv_data'].copy()
+                if 'valid_until' in csv_copy and csv_copy['valid_until']:
+                    csv_copy['valid_until'] = csv_copy['valid_until'].isoformat()
+                serializable_result['csv_data'] = csv_copy
+            
+            # Convertir les dates du certificat existant
+            if 'existing_cert' in serializable_result and serializable_result['existing_cert']:
+                existing_copy = serializable_result['existing_cert'].copy()
+                if 'valid_until' in existing_copy and existing_copy['valid_until']:
+                    existing_copy['valid_until'] = existing_copy['valid_until'].isoformat()
+                if 'created_at' in existing_copy and existing_copy['created_at']:
+                    existing_copy['created_at'] = existing_copy['created_at'].isoformat()
+                serializable_result['existing_cert'] = existing_copy
+            
+            serializable_results.append(serializable_result)
         
         # Stocker en session pour la confirmation
-        self.request.session['csv_import_data'] = serializable_data
+        self.request.session['csv_analysis_results'] = serializable_results
+        self.request.session['csv_analysis_summary'] = analysis_result['summary']
         self.request.session['csv_auto_enrich'] = form.cleaned_data.get('auto_enrich', False)
         
-        return self.render_to_response(
-            self.get_context_data(form=form, preview_data=certificates_data, preview_mode=True)
+        # Créer le contexte avec l'analyse
+        context = self.get_context_data(
+            form=form,
+            analysis_results=analysis_result['results'],
+            analysis_summary=analysis_result['summary'],
+            analyzer=analyzer,
+            preview_mode=True
         )
+        
+        return self.render_to_response(context)
 
 
 class DomainScanView(LoginRequiredMixin, FormView):

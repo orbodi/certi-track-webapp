@@ -66,47 +66,113 @@
                     </form>
 
                     {% else %}
-                    <!-- Preview des données -->
-                    <div class="alert alert-success">
-                        <h5><i class="bi bi-check-circle"></i> Preview des données</h5>
-                        <p>{{ preview_data|length }} ligne(s) détectée(s). Vérifiez les données avant de confirmer l'import.</p>
+                    <!-- Preview des données avec analyse intelligente -->
+                    <div class="alert alert-info">
+                        <h5><i class="bi bi-graph-up"></i> Analyse de l'import CSV</h5>
+                        <p class="mb-2">{{ analysis_summary.total }} certificat(s) détecté(s) dans le fichier CSV :</p>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h3 class="text-success mb-0">{{ analysis_summary.new_count }}</h3>
+                                    <small class="text-muted">Nouveaux</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h3 class="text-primary mb-0">{{ analysis_summary.update_count }}</h3>
+                                    <small class="text-muted">Mises à jour</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h3 class="text-secondary mb-0">{{ analysis_summary.duplicate_count }}</h3>
+                                    <small class="text-muted">Doublons</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h3 class="text-warning mb-0">{{ analysis_summary.conflict_count }}</h3>
+                                    <small class="text-muted">Conflits</small>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="table-responsive mb-4">
-                        <table class="table table-bordered table-sm">
-                            <thead class="table-light">
+                    <!-- Légende des actions -->
+                    <div class="alert alert-light border mb-3">
+                        <h6 class="mb-2"><i class="bi bi-info-circle"></i> Légende des actions :</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <span class="badge bg-success me-1"><i class="bi bi-plus-circle"></i> Nouveau</span> : Sera créé
+                            </div>
+                            <div class="col-md-6">
+                                <span class="badge bg-primary me-1"><i class="bi bi-arrow-repeat"></i> Mise à jour</span> : Ancienne version archivée, nouvelle créée
+                            </div>
+                            <div class="col-md-6">
+                                <span class="badge bg-secondary me-1"><i class="bi bi-dash-circle"></i> Doublon</span> : Sera ignoré (déjà en base)
+                            </div>
+                            <div class="col-md-6">
+                                <span class="badge bg-warning text-dark me-1"><i class="bi bi-exclamation-triangle"></i> Conflit</span> : Date antérieure, sera ignoré
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive mb-4" style="max-height: 600px; overflow-y: auto;">
+                        <table class="table table-bordered table-sm table-hover">
+                            <thead class="table-light sticky-top">
                                 <tr>
-                                    <th>#</th>
-                                    <th>Délivré à</th>
-                                    <th>Délivré par</th>
-                                    <th>Expiration</th>
-                                    <th>Rôles</th>
-                                    <th>Template</th>
-                                    <th>Statut</th>
+                                    <th style="width: 50px;">#</th>
+                                    <th style="width: 120px;">Action</th>
+                                    <th>Certificat CSV</th>
+                                    <th>Date d'expiration</th>
+                                    <th>Certificat existant</th>
+                                    <th>Détails</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for cert in preview_data %}
-                                <tr {% if cert.error %}class="table-danger"{% endif %}>
-                                    <td>{{ cert.line_number }}</td>
-                                    {% if cert.error %}
-                                    <td colspan="6">
-                                        <i class="bi bi-exclamation-triangle text-danger"></i> {{ cert.error }}
-                                    </td>
-                                    {% else %}
-                                    <td><strong>{{ cert.common_name }}</strong></td>
-                                    <td><small>{{ cert.issuer }}</small></td>
-                                    <td>{{ cert.valid_until|date:"d/m/Y"|default:"-" }}</td>
-                                    <td><small>{{ cert.key_usage|default:"-" }}</small></td>
-                                    <td><small>{{ cert.template_name|default:"-" }}</small></td>
+                                {% for result in analysis_results %}
+                                <tr>
+                                    <td>{{ result.csv_data.line_number|default:forloop.counter }}</td>
                                     <td>
-                                        {% if cert.valid_until %}
-                                        <span class="badge bg-success">OK</span>
+                                        {% if result.action == 'new' %}
+                                        <span class="badge bg-success"><i class="bi bi-plus-circle"></i> Nouveau</span>
+                                        {% elif result.action == 'update' %}
+                                        <span class="badge bg-primary"><i class="bi bi-arrow-repeat"></i> Mise à jour</span>
+                                        {% elif result.action == 'duplicate' %}
+                                        <span class="badge bg-secondary"><i class="bi bi-dash-circle"></i> Doublon</span>
+                                        {% elif result.action == 'conflict' %}
+                                        <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle"></i> Conflit</span>
                                         {% else %}
-                                        <span class="badge bg-warning">Date manquante</span>
+                                        <span class="badge bg-danger"><i class="bi bi-x-circle"></i> Erreur</span>
                                         {% endif %}
                                     </td>
-                                    {% endif %}
+                                    <td>
+                                        <strong>{{ result.csv_data.common_name }}</strong><br>
+                                        <small class="text-muted">{{ result.csv_data.issuer|truncatechars:40 }}</small>
+                                    </td>
+                                    <td>
+                                        {% if result.csv_data.valid_until %}
+                                        <strong>{{ result.csv_data.valid_until|date:"d/m/Y" }}</strong>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if result.existing_cert %}
+                                        <small>
+                                            Exp: <strong>{{ result.existing_cert.valid_until|date:"d/m/Y" }}</strong><br>
+                                            <span class="text-muted">Créé: {{ result.existing_cert.created_at|date:"d/m/Y" }}</span>
+                                        </small>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small>
+                                            <strong>{{ result.reason }}</strong><br>
+                                            <em class="text-muted">{{ result.recommendation }}</em>
+                                        </small>
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>

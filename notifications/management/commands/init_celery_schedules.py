@@ -15,7 +15,8 @@ class Command(BaseCommand):
         
         # Créer les planifications crontab
         schedules = {
-            'check_expirations': self._get_or_create_schedule(hour=8, minute=0),
+            'monthly_alert_30d': self._get_or_create_schedule(hour=9, minute=0, day_of_month='1'),  # 1er du mois
+            'monthly_alert_7d': self._get_or_create_schedule(hour=9, minute=0, day_of_month='24'),  # 7 jours avant fin de mois
             'daily_summary': self._get_or_create_schedule(hour=9, minute=0),
             'auto_scan': self._get_or_create_schedule(hour=2, minute=0, day_of_week='0'),  # Dimanche
             'update_days': self._get_or_create_schedule(hour=0, minute=30),  # Tous les jours à 00:30 UTC
@@ -24,11 +25,18 @@ class Command(BaseCommand):
         # Créer ou mettre à jour les tâches périodiques
         tasks = [
             {
-                'name': 'Vérification des expirations de certificats',
-                'task': 'notifications.tasks.check_certificate_expirations',
-                'schedule': schedules['check_expirations'],
+                'name': 'Alerte mensuelle - Certificats 30 jours',
+                'task': 'notifications.tasks.monthly_alert_30_days',
+                'schedule': schedules['monthly_alert_30d'],
                 'enabled': True,
-                'description': 'Vérifie quotidiennement les certificats expirant et envoie des alertes'
+                'description': 'Alerte mensuelle pour les certificats expirant dans 30 jours ou moins (1er du mois)'
+            },
+            {
+                'name': 'Alerte mensuelle - Certificats 7 jours',
+                'task': 'notifications.tasks.monthly_alert_7_days',
+                'schedule': schedules['monthly_alert_7d'],
+                'enabled': True,
+                'description': 'Alerte mensuelle pour les certificats expirant dans 7 jours ou moins (7 jours avant fin de mois)'
             },
             {
                 'name': 'Résumé quotidien',

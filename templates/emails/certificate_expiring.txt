@@ -1,36 +1,5 @@
-CertiTrack - Alerte Certificat SSL/TLS
-=======================================
-
-{% if days_until_expiration is not None and days_until_expiration <= 7 %}
-⚠️ ATTENTION URGENTE !
-Le certificat SSL/TLS expire dans {{ days_until_expiration }} jour{{ days_until_expiration|pluralize }} !
-{% elif days_until_expiration is not None %}
-⚠️ ACTION REQUISE
-Le certificat SSL/TLS expire dans {{ days_until_expiration }} jours.
-{% endif %}
-
 Bonjour,
-
-Le certificat suivant nécessite votre attention :
-
-DÉTAILS DU CERTIFICAT
-----------------------
-Délivré à     : {{ certificate.common_name }}
-Délivré par   : {{ certificate.issuer }}
-Date d'expiration : {{ certificate.valid_until|date:"d/m/Y à H:i" }}
-Jours restants : {% if days_until_expiration is not None %}{{ days_until_expiration }} jour{{ days_until_expiration|pluralize }}{% else %}N/A{% endif %}
-{% if certificate.environment %}Environnement : {{ certificate.get_environment_display }}{% endif %}
-{% if certificate.template_name %}Modèle        : {{ certificate.template_name }}{% endif %}
-
-ACTION RECOMMANDÉE
-------------------
-Veuillez renouveler ce certificat dès que possible pour éviter toute interruption de service.
-
-Voir les détails : {{ cert_url }}
-
----
-{% if rule %}Règle appliquée : {{ rule.name }}{% endif %}
-Cette alerte a été générée automatiquement par CertiTrack le {{ current_date|date:"d/m/Y à H:i" }}.
-Merci de ne pas répondre à cet email.
-
-
+1 certificat expire bientôt :
+- {{ certificate.common_name }} (Expire le {{ certificate.valid_until|date:"d/m/Y" }})
+NB : message automatique ne pas répondre.
+Cordialement
