@@ -74,6 +74,28 @@ class NotificationRule(models.Model):
         verbose_name="Actif"
     )
     
+    # Planification
+    SCHEDULE_TYPE_CHOICES = [
+        ('manual', 'Manuel (via interface)'),
+        ('automatic', 'Automatique (Celery Beat)'),
+    ]
+    
+    schedule_type = models.CharField(
+        max_length=10,
+        choices=SCHEDULE_TYPE_CHOICES,
+        default='manual',
+        verbose_name="Type de planification"
+    )
+    
+    # Pour planification automatique
+    celery_task_name = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Nom de la tâche Celery",
+        help_text="Ex: notifications.tasks.send_rule_alert"
+    )
+    
     # Audit
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -98,6 +120,44 @@ class NotificationRule(models.Model):
         if not self.email_recipients:
             return []
         return [email.strip() for email in self.email_recipients.split('\n') if email.strip()]
+    
+    def send_notification(self):
+        """Envoie la notification selon la règle"""
+        from .tasks import send_rule_alert
+        return send_rule_alert.delay(self.id)
+    
+    def create_celery_task(self):
+        """Crée une tâche Celery pour cette règle"""
+        if self.schedule_type == 'automatic' and self.celery_task_name:
+            from django_celery_beat.models import PeriodicTask, CrontabSchedule
+            from django.utils import timezone
+            
+            # Créer ou récupérer le schedule crontab
+            schedule, created = CrontabSchedule.objects.get_or_create(
+                minute='0',
+                hour='9',
+                day_of_month='1',  # Par défaut 1er du mois
+                month_of_year='*',
+                day_of_week='*'
+            )
+            
+            # Créer la tâche périodique
+            task, created = PeriodicTask.objects.get_or_create(
+                name=f"Règle: {self.name}",
+                defaults={
+                    'task': self.celery_task_name,
+                    'crontab': schedule,
+                    'enabled': self.is_active,
+                    'args': f'[{self.id}]'  # Passer l'ID de la règle
+                }
+            )
+            
+            if not created:
+                task.enabled = self.is_active
+                task.save()
+            
+            return task
+        return None
 
 
 class NotificationLog(models.Model):

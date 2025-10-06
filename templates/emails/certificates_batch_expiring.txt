@@ -1,21 +1,7 @@
-╔═══════════════════════════════════════════════════════════════╗
-║                                                               ║
-║                      🔒 CertiTrack                            ║
-║              Gestion des Certificats SSL/TLS                 ║
-║                                                               ║
-╚═══════════════════════════════════════════════════════════════╝
-
-{% if days_before_expiration <= 7 %}⚠️ ATTENTION URGENTE{% else %}⚠️ ACTION REQUISE{% endif %}
-
 Bonjour,
-
-{{ certificates|length }} certificat{% if certificates|length > 1 %}s expirent{% else %} expire{% endif %} dans {{ days_before_expiration }} jour{{ days_before_expiration|pluralize }}.
-
-Cliquez sur le lien ci-dessous pour voir la liste complète :
-
-📋 Voir les certificats concernés
-{{ certificates_list_url }}
-
----
-Alerte automatique générée le {{ current_date|date:"d/m/Y à H:i" }} (UTC)
-CertiTrack - Merci de ne pas répondre à cet email.
+{{ certificates|length }} certificat{% if certificates|length > 1 %}s expirent{% else %} expire{% endif %} bientôt :
+{% for cert in certificates %}
+- {{ cert.common_name }} (Expire le {{ cert.valid_until|date:"d/m/Y" }})
+{% endfor %}
+NB : message automatique ne pas répondre.
+Cordialement

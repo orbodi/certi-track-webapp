@@ -3,7 +3,7 @@ Commande pour envoyer le résumé quotidien
 Usage: python manage.py send_daily_summary [--dry-run]
 """
 from django.core.management.base import BaseCommand
-from django.core.mail import EmailMultiAlternatives
+from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.conf import settings
@@ -106,22 +106,38 @@ class Command(BaseCommand):
             from notifications.email_backend import get_connection
             connection = get_connection()
             
-            # Rendu des templates
-            html_content = render_to_string('emails/daily_summary.html', context)
-            
             # Créer l'email
             from_email = f'{email_settings.from_name} <{email_settings.from_email}>'
-            subject = f'📊 CertiTrack - Résumé Quotidien ({timezone.now().strftime("%d/%m/%Y")})'
+            subject = f'CertiTrack - Résumé Quotidien ({timezone.now().strftime("%d/%m/%Y")})'
             
-            email = EmailMultiAlternatives(
+            # Créer le contenu email directement avec formatage forcé
+            cert_list = ""
+            for cert in expiring_certs:
+                cert_list += f"- {cert.common_name} (Expire le {cert.valid_until.strftime('%d/%m/%Y')})\n"
+            
+            body_content = f"""Bonjour,
+
+Voici la liste des certificats arrivant à échéance dans les prochains jours :
+
+{cert_list}
+Action requise : renouveler ces certificats afin d'éviter toute interruption de service.
+
+Message automatique – merci de ne pas répondre.
+
+Cordialement,
+CertiTrack"""
+            
+            # Envoyer seulement du texte simple avec encodage UTF-8 explicite
+            email = EmailMessage(
                 subject=subject,
-                body=f'Résumé quotidien des certificats SSL/TLS\n\n'
-                     f'Total: {stats["total"]} | Expire Bientôt: {stats["expiring_soon"]} | Expirés: {stats["expired"]}',
+                body=body_content,
                 from_email=from_email,
                 to=recipients,
                 connection=connection
             )
-            email.attach_alternative(html_content, "text/html")
+            # Forcer l'encodage UTF-8 et le type de contenu
+            email.encoding = 'utf-8'
+            email.content_subtype = 'plain'
             
             # Envoyer
             email.send(fail_silently=False)

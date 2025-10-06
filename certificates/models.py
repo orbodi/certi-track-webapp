@@ -202,6 +202,28 @@ class Certificate(models.Model):
         help_text="Nombre de jours avant expiration (calculé automatiquement)"
     )
     
+    # === Archivage ===
+    archived = models.BooleanField(
+        default=False,
+        db_index=True,
+        verbose_name="Archivé",
+        help_text="Certificat archivé (ancienne version remplacée)"
+    )
+    
+    archived_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Date d'archivage"
+    )
+    
+    archived_reason = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Raison de l'archivage",
+        help_text="Ex: Remplacé par un certificat plus récent"
+    )
+    
     # === Audit ===
     created_at = models.DateTimeField(
         auto_now_add=True,

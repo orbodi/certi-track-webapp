@@ -12,8 +12,8 @@ class WallDashboardView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Statistiques globales
-        all_certs = Certificate.objects.all()
+        # Statistiques globales (exclure les archivés)
+        all_certs = Certificate.objects.filter(archived=False)
         context['stats'] = {
             'total': all_certs.count(),
             'active': all_certs.filter(status='active').count(),
@@ -21,10 +21,10 @@ class WallDashboardView(TemplateView):
             'expired': all_certs.filter(status='expired').count(),
         }
         
-        # Récupérer TOUS les certificats et les trier par urgence
+        # Récupérer TOUS les certificats non archivés et les trier par urgence
         # Ordre de priorité : Critiques (<=7j) > Orange (8-30j) > Vert (>30j) > Expirés
         
-        all_active_certs = Certificate.objects.exclude(
+        all_active_certs = Certificate.objects.filter(archived=False).exclude(
             days_remaining__isnull=True
         ).order_by('days_remaining')
         
@@ -50,8 +50,8 @@ class WallDashboardView(TemplateView):
         context['active_certs'] = [c for c in all_certs_list if c.days_remaining is not None and c.days_remaining > 30]
         context['expired_certs'] = [c for c in all_certs_list if c.days_remaining is not None and c.days_remaining < 0]
         
-        # Statistiques par environnement
-        context['env_stats'] = Certificate.objects.values('environment').annotate(
+        # Statistiques par environnement (exclure les archivés)
+        context['env_stats'] = Certificate.objects.filter(archived=False).values('environment').annotate(
             count=Count('id')
         ).order_by('-count')
         
