@@ -31,13 +31,13 @@
                         {% if certificate.valid_from %}
                         <tr>
                             <th>Valide depuis</th>
-                            <td>{{ certificate.valid_from|date:"d/m/Y H:i" }}</td>
+                            <td>{{ certificate.valid_from|date:"d/m/Y" }}</td>
                         </tr>
                         {% endif %}
                         <tr>
                             <th>Expire le</th>
                             <td>
-                                <strong>{{ certificate.valid_until|date:"d/m/Y H:i" }}</strong>
+                                <strong>{{ certificate.valid_until|date:"d/m/Y" }}</strong>
                                 {% if certificate.days_until_expiration is not None %}
                                 <br><span class="badge bg-{{ certificate.expiration_color }}">
                                     {% if certificate.is_expired %}
